@@ -13,53 +13,89 @@ the end for clarity; the final identity score is returned to the user.
 from Bio import Align
 from Bio.Align import substitution_matrices
 
-def align(target, query, verbose = True): # master function
+def compute_lca(alignment, threshold=0.98):
+    coverage = len(alignment)
+    best_start = best_end = max_len = 0 # Setting "optimal" variables.
+
+    for start in range(coverage): # Test each possible starting point (i.e. modified sliding window).
+        matches = total = 0
+        for end in range(start, coverage): # Expand forward one symbol at a time.
+            symbol = alignment[end]
+            if symbol == '|':
+                matches += 1
+                total += 1
+            elif symbol == '.' or symbol == "-":
+                total += 1
+            else:
+                continue  # Skip non-alignment characters.
+
+            if total == 0: # Avoid division by zero error.
+                continue
+
+            identity = matches / total # Computing current ratio.
+
+            # If the ratio is high enough and the region is the longest we've seen, update the result.
+            if identity >= threshold:
+                curr_len = end - start + 1
+                if curr_len > max_len:
+                    max_len = curr_len
+                    best_start, best_end = start, end
+
+    # After parsing, return the start and end of the longest high-quality stretch.
+    return best_start, best_end, max_len
+
+def align(target_set: dict, query, identity_ratio, verbose = True): # master function
     aligner = create_aligner()
-    alignments = aligner.align(target, query)
-    heehee = alignments[0]
+    alignment_metadata = dict.fromkeys(['start', 'end', 'length', 'target', 'alignment'])
+    alignment_metadata["length"] = 0
+    '''
+    [[[155 323]
+    [323 324]]
 
+    [[  0 168]
+    [224 225]]]
 
-    print(heehee)
+    chunk 1: target (155-323), query (0-168)
+    chunk 2: target (323-324), query (224-225)
+    '''
+    for target in target_set.values():
+        alignments = aligner.align(target.seq, query) # update to say target.seq
+        alignment = alignments[0]
+        for i in range(len(alignment.aligned[0])): # parsing each chunk
+            query_range = slice(alignment.aligned[1][i][0], alignment.aligned[1][i][1])
 
-    identity_ratio = 0.95
-    max_continuous_alignment = 0
-    for i in range(len(heehee.aligned)): # parsing each chunk
-        target_range = slice(heehee.aligned[0][i][0], heehee.aligned[0][i][1])
-        target_seq = heehee.sequences[0][target_range]
-        query_range = slice(heehee.aligned[1][i][0], heehee.aligned[1][i][1])
-        query_seq = heehee.sequences[1][query_range]
+            # target_range = slice(alignment.aligned[0][i][0], alignment.aligned[0][i][1])
+            # target_seq = alignment.sequences[0][target_range]
+            # query_seq = alignment.sequences[1][query_range]
 
-        if target_range.stop - target_range.start <= 10:
-            continue
+            if query_range.stop - query_range.start <= 10:
+                continue
 
-        align_chunk = heehee[:, target_range]
-        print(target_seq)
-        print(query_seq)
+            align_chunk = alignment[:, query_range]
+            match_elements = ''.join(str(align_chunk).splitlines()[1::2]).split()
+            filtered_matches = [phrase for phrase in match_elements if not phrase.isdigit()]
+            match_seq = ''.join(filtered_matches)
 
-        match_elements = ''.join(str(align_chunk).splitlines()[1::2]).split()
-        filtered_matches = [phrase for phrase in match_elements if not phrase.isdigit()]
-        match_seq = ''.join(filtered_matches)
-
-        lca = compute_lca(match_seq, threshold=0.98)
-        
-
-        successes, offenses = 0, 0
-        #length = helper(match_seq, identity_ratio)
-        #print(length)
-        
-        print(match_seq)
-
-        print(align_chunk)
-
-
-    print()
-
+            start, end, length = compute_lca(match_seq, threshold=identity_ratio)
+            #print(length)
+            #print(int(alignment_metadata["length"]))
+            if length > int(alignment_metadata["length"]):
+                #print("THIS THE WINNER")
+                refined_start = start + int(query_range.start)
+                refined_end = refined_start + (end - start + 1)
+                alignment_metadata.update({'start': refined_start, 'end': refined_end, 'length': length, 
+                                           'target': target.id.replace('\u200b', ''), 'alignment': alignment})
 
     if verbose:
-        print("Pairwise Sequence Alignment (params = gap_pen: 10.0, extend_pen: 0.5, matrix: EBLOSUM62):\n")
-        print(alignments[0])
+        print("Optimal Pairwise Sequence Alignment (params = gap_pen: 10.0, extend_pen: 0.5, matrix: EBLOSUM62):\n")
+        print(alignment_metadata["alignment"])
+        alignment_metadata["identity_pct"] = display_statistics(alignment_metadata["alignment"], verbose = verbose)
+        print(f"Most Compatible Target: {alignment_metadata["target"]}")
+        print(f"Maximum Continuous Length: {alignment_metadata["length"]} (query region defined by "
+              f"start = {alignment_metadata["start"]}, end = {alignment_metadata["end"]})\n")
     
-    return display_statistics(alignments[0], verbose = verbose)
+    return alignment_metadata
+
 
 '''def helper(match_seq, identity_ratio):
     successes = 0
@@ -105,11 +141,23 @@ def display_statistics(alignment, verbose = True):
     return round(identity/alignment.length * 100, 1)
 
 
-
-align("MSGHHHHHHPSGVKTENNDHINLKVAGQDGSVVQFKIKRHTPLSKLMKAYCERQGLSMRQIRFRFDGQPINETDTPAQLEMEDEDTIDVFQQQTGGEKRKPIRVLSLFDGIATGLLVLKDLGIQVDRYIASEVCEDSITVGMVRHQGKIMYVGDVRSVTQKHIQEWGPFDLVIGGSPCNDLSIVNPARKGLYEGTGRLFFEFYRLLHDARPKEGDDRPFFWLFENVVAMGVSDKRDISRFLESNPVMIDAKEVSAAHRARYFWGNLPGMNRPLASTVNDKLELXECLEHGRIAKFSXXERLRRAQTRLNRXRXTFSRXXMNEXX", 
-      "RSVTQKHIQEWGPFDLVIGGSPCNDLSIVNPARKGLYEGTGRLFFEFYRLLHDARPKEGDDRPFFWLFENVVAMGVSDKRDISRFLESNPVMIDAKEVSAAHRARYFWGNLPGMNRPLASTVNDKLELQECLEHGRIAKFSKVRTITTRSNSIKQGKDQHFPVFMNEKEDILWCTEMERVFGFPVHYTDVSNMSRLARQRLLGRSWSVPVIRHLFAPLKEYFACV", False)
-
 '''
+res = align(["MVSKGEELFTGVVPILVELDGDVNGHKFSVSGEGEGDATYGKLTLKFICTTGKLPVPWPTLVTTFTYGVQCFSRYPDHMKQHDFFKSAMPEGYVQERTIFFKDDGNYKTRAEVKFEGDTLVNRIELKGIDFKEDGNILGHKLEYNYNSHNVYIMADKQKNGIKVNFKIRHNIEDGSVQLADHYQQNTPIGDGPVLLPDNHYLSTQSALSKDPNEKRDHMVLLEFVTAAGITHGMDELYKGGASPAAPAGGVSFAFNLNSLIVGILRFHW"], 
+            "NNNNNNNNNNNNNNCNGGTCTGTGTGCTGGCCCNTCACTTTGGCAAAGCACGTGTACAGTGGCCACCATGGGAGGAATGGTGTCCAAGGGCGAGGAGCTGTTCACAGGCGTGGTTCCCATTCTGGTGGAGC"
+"TGGATGGCGACGTGAACGGCCACAAGTTCAGCGTGTCTGGAGAAGGCGAGGGCGACGCAACCTACGGAAAGCTGACCCTGAAGTTCATCTGCACCACCGGCAAGCTGCC"
+"CGTGCCTTGGCCTACACTGGTGACCACATTCACCTACGGCGTGCAGTGCTTCAGCAGGTACCCCGACCACATGAAGCAGC"
+"ACGACTTCTTCAAGTCCGCCATGCCCGAGGGCTACGTGCAGGAGAGAACCATCTTCTTTAAGGACGACGGAAACTACAAG"
+"ACCAGGGCCGAGGTGAAGTTCGAGGGAGACACCCTGGTGAACAGGATCGAGCTGAAGGGCATCGACTTCAAGGAGGACGG"
+"CAACATCCTGGGCCACAAGCTGGAGTACAACTACAACAGCCACAACGTGTACATCATGGCCGACAAGCAGAAGAACGGCA"
+"TCAAGGTGAACTTCAAGATCAGGCACAACATCGAGGATGGCAGCGTGCAGCTGGCTGACCACTATCAGCAGAACACACCT"
+"ATCGGCGACGGCCCCGTTCTGCTGCCTGACAACCACTACCTGAGCACACAGAGCGCTCTGAGCAAGGACCCCAACGAGAA"
+"GAGAGATCACATGGTGCTGCTGGAATTCGTGACCGCCGCTGGCATCACACACGGCATGGACGAGCTTTATAAAGGCGGAG"
+"CCAGCCCTGCTGCTCCTGCTGGAGGCGTTAGCTTCGCCTTTAACCTGAACAGCCTGATCGTGGGCATCCTGAGGTTCCAC"
+"TGGTNANNTTCCTAATGAGCATGTTTGGACCAAATCAACTTGTGATACCATGCTCAAGAGGCCTCAATTATATTTGAGTT"
+"TTTAATTTTATGAAAAAAAAAAAAAAAAAACGGAATTCACCCCACCAGTGNNNCTGCNATCANAAAGTNNTNGNNGGTGT"
+"NGCTAATGCCCTNNNCNNCAGNATCACTANCTCGCTTTNNNCTGTCNNTTNCNANNNAANGNTNNTTTNNTCCCTAANTCCNNNNNNNNAAACTG", 0.98)
+print(res)
+
 thoughts:
 - get rid of gap regions in advance (one seq missing) via .aligned
 - subset alignment by target indices to get the initial chunks
@@ -137,41 +185,14 @@ So the score (alignment length) tells you:
 
 “How much of this exact query can I confidently map to this reference?”
 
-'''
-
-def compute_lca(alignment, threshold=0.95):
-    coverage = len(alignment)
-    best_start = best_end = max_len = 0 # setting "optimal" variables
-
-    for start in range(coverage): # testing each possible starting point
-        matches = total = 0
-        for end in range(start, coverage): # expands forward one symbol at a time
-            symbol = alignment[end]
-            if symbol == '|':
-                matches += 1
-                total += 1
-            elif symbol == '.':
-                total += 1
-            else:
-                continue  # skip non-alignment characters
-
-            if total == 0: # avoid division error
-                continue
-
-            identity = matches / total # computing current ratio
-
-            # If the ratio is high enough and the region is longer than anything found before, it saves it as the best one.
-            if identity >= threshold:
-                curr_len = end - start + 1
-                if curr_len > max_len:
-                    max_len = curr_len
-                    best_start, best_end = start, end
-
-    # after parsing, returns the start and end of the longest high-quality stretch
-    return best_start, best_end, max_len
 
 
-alignment = "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||.||||||||||||.......................|||."
+
+
+
+#alignment = "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||.||||||||||||.......................|||."
+alignment = "....-----|||..||||..."
 start, end, length = compute_lca(alignment, threshold=0.98)
 print(f"Best region: start={start}, end={end}, length={length}")
 print("Segment:", alignment[start:end+1])
+'''

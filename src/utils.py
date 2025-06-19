@@ -38,13 +38,13 @@ def get_input(prompt, valid_set, mode = "options"):
 
     return value
 
-def data_export(df, seq_name, direction, vector_info, likely_seq, metadata, align_perf):
+def data_export(df, seq_name, direction, likely_seq, metadata, align_perf, target):
     new_row = {"Name": seq_name, 
                "Direction": direction, 
-               "Vector?": vector_info, 
                "Most-Likely-Seq": likely_seq, 
                "Seq-Metadata": metadata,
-               "Alignment-Identity (%)": align_perf}
+               "Alignment-Identity (%)": align_perf,
+               "Protein Target": target}
     
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index = True) # appending new row
     return df

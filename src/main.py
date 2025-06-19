@@ -12,9 +12,9 @@ are packaged into a CSV for use in downstream applications.
 
 """
 
-from src.process_seq import *
-from src.compare_seq import *
-from src.utils import *
+from process_seq import *
+from compare_seq import *
+from utils import *
 import time
 import os
 
@@ -38,21 +38,29 @@ strand_direction = get_input("What should be the direction of translation? (opti
 verbose_flag = get_input("Occasionally, output from the analysis may be shown on terminal. Activate "
                          "this verbose mode? (options: 'Y' or 'N'): ", ["Y", "N"]).upper() == "Y"
 
-
 # (2) High-Level Specifications - Target Sequence, Verbose Setting 
-target = get_input("Copy and paste your target sequence: ", "letters", "substr").upper()
-verbose_flag = get_input("Occasionally, output from the analysis may be shown on terminal. Activate "
-                         "this verbose mode? (options: 'Y' or 'N'): ", ["Y", "N"]).upper() == "Y"
+#target = get_input("Copy and paste your target sequence: ", "letters", "substr").upper()
+#verbose_flag = get_input("Occasionally, output from the analysis may be shown on terminal. Activate "
+                         #"this verbose mode? (options: 'Y' or 'N'): ", ["Y", "N"]).upper() == "Y"
 
 print(f"\nIdentified {len(in_records)} sequence entries...")
+print(f"Screening across {len(tgt_records)} target sequences...")
 
 # For EACH sequence, user is asked for a (3) translate direction and (4) optional vector!
 # Status messages highlight the completion of an ESA step, distinguished by time-sleep commands
 run_number = 1
-results_df = pd.DataFrame(columns = ["Name", "Direction", "Vector?", "Most-Likely-Seq", 
-                                     "Seq-Metadata", "Alignment-Identity (%)"])
+results_df = pd.DataFrame(columns = ["Name", "Direction", "Most-Likely-Seq", 
+                                     "Seq-Metadata", "Alignment-Identity (%)", "Target"])
+
 for record in in_records.values():
     # compare the max ORF across all targets
+    run_number += 1
+    if run_number < 12:
+        continue
+
+    if run_number > 13:
+        break
+
     time.sleep(1)
     print(f"\n*** Run #{run_number} of {len(in_records)} ***\n")
     time.sleep(1)
@@ -61,25 +69,7 @@ for record in in_records.values():
     
     frame_set = generate_frames(str(record.seq), strand_direction, verbose = verbose_flag)
     print(">> STATUS: Frame generation complete!\n")
-
-    
-
-    # Choosing which way to proceed based on the vector designation (from above)
-    if vector_flag:
-        vector_seq = get_input("Please input the sequence: ", "letters", "substr").upper()
-        vector_orientation = get_input("Is this a beginning or end sequence? (options: 'B' or 'E'): ",
-                                       ["B", "E"]).upper()
-        time.sleep(1)
-        print()
-        frame_set = generate_frames(str(record.seq), strand_direction, 
-                                    indicator_tag = [vector_seq, vector_orientation], 
-                                    verbose = verbose_flag)
-    else:
-        time.sleep(1)
-        print()
-        frame_set = generate_frames(str(record.seq), strand_direction, verbose = verbose_flag)
-    
-    
+    time.sleep(1)
 
     empty_result = all(len(frame.get('orf_set')) == 0 for frame in frame_set.values())
     if not empty_result: # if we yield no significant open reading frames
@@ -87,18 +77,18 @@ for record in in_records.values():
         ref_frame, optimal_seq, length, start_pos = select_seq(frame_set, verbose = verbose_flag)
         print(">> STATUS: Viable amino acid sequence found!\n")
 
+        print(f">> STATUS: Computing best alignment among {len(tgt_records)} target entries...")
         time.sleep(1)
-        align_res = align(target, optimal_seq, verbose = verbose_flag)
+        optimal_seq = "MGGVSFAFNLNSLIVGILRFHWGGASPAAPAGGMVSKGEELFTGVVPILVELDGDVNGHKFSVSGEGEGDATYGKLTLKFICTTGKLPVPWPTLVTTFTYGVQCFSRP"
+        align_res = align(tgt_records, optimal_seq, identity_ratio = 0.98, verbose = verbose_flag)
         print(">> STATUS: Pairwise alignment finished!\n")
 
-        results_df = data_export(results_df, record.id, strand_direction, 
-                                 f"Y ({vector_seq})" if vector_flag else "N", optimal_seq, 
+        results_df = data_export(results_df, record.id, strand_direction, optimal_seq, 
                                  f"Source: Frame #{ref_frame}; Length: {length}; Start Position: " 
-                                 f"{start_pos}", align_res)
+                                 f"{start_pos}", align_res, align_res["target"])
     else:
         print(">> STATUS: No valid AA reads found.\n")
-        results_df = data_export(results_df, record.id, strand_direction, 
-                                 f"Y ({vector_seq})" if vector_flag else "N", "N/A", "N/A", "N/A")
+        results_df = data_export(results_df, record.id, strand_direction, "N/A", "N/A", "N/A")
     
     time.sleep(1)
     print(">> STATUS: Run data exported!")
