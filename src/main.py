@@ -47,12 +47,9 @@ print(f"Screening across {len(tgt_records)} target sequences...")
 # Status messages highlight the completion of an ESA step, distinguished by time-sleep commands.
 
 run_number = 1
-results_df = pd.DataFrame(columns = ["Name", "Target", "Identity (%)", "Direction", "Most-Likely-Seq", "Notes"])
+results_df = pd.DataFrame(columns = ["Name", "Target", "Identity (%)", "Most-Likely-ORF", "Direction", "Notes"])
 
 for record in in_records.values():
-    if run_number > 1:
-        break
-
     time.sleep(0.5)
     print(f"\n*** Run #{run_number} of {len(in_records)} ***\n")
     time.sleep(0.5)
