@@ -112,3 +112,14 @@ def color_sequence(aa_seq, orf_set, label, indicator_tag = ["M", "B"]):
                                               "red", attrs=["bold"]))
     
     print(f"{label}:\n{colored_seq}\n")
+
+def enumerate_orfs(frame_set):
+    all_orfs = []
+    for i in range(len(frame_set)):
+        frame_data = list(frame_set.values())[i]
+        if len(frame_data["orf_set"]) == 0:
+            continue
+        
+        all_orfs.append(frame_data["orf_set"])
+
+    return [orf for orfs in all_orfs for orf in orfs]
