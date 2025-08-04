@@ -50,6 +50,9 @@ run_number = 1
 results_df = pd.DataFrame(columns = ["Name", "Target", "Identity (%)", "Most-Likely-ORF", "Direction", "Notes"])
 
 for record in in_records.values():
+    if run_number >= 2:
+        break
+
     time.sleep(0.5)
     print(f"\n*** Run #{run_number} of {len(in_records)} ***\n")
     time.sleep(0.5)
@@ -116,5 +119,14 @@ infile = infile.replace("\\", "/") if "\\" in infile else infile
 prefix = "" if os.path.dirname(infile) == "" else os.path.dirname(infile) + os.sep
 
 # Saving the results!
-results_df.to_csv(f"{prefix}ESA-Results-{time.strftime('%m-%d-%Y')}.csv", index = False)
+base_filename = f"{prefix}ESA-Results-{time.strftime('%m-%d-%Y')}"
+results_filename = f"{base_filename}.csv"
+
+#
+repeat_counter = 1
+while os.path.exists(results_filename):
+    results_filename = f"{base_filename}-{repeat_counter}.csv"
+    repeat_counter += 1
+
+results_df.to_csv(results_filename, index = False)
 print("\n***\n\nProcess complete! Your results should be available for viewing in a CSV file.\n")
