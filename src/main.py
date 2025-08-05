@@ -3,12 +3,12 @@
 
 """
 Author: Rohak Jain
-Last Date Modified: 2025-06-19
+Last Date Modified: 2025-08-04
 Description: This program encodes the primary method workflow for the ESA script, connecting the
 computational aspects of the analysis through well-defined user input, console display, and file I/O.
 Specifically, the code is able to generalize to high sequence volumes and account for a range of user 
-preferences, including translation direction, vector tags, and read-by-read frame output. The final results
-are packaged into a CSV for use in downstream applications.
+preferences, including translation direction, read-by-read frame output, and alignment dynamics. The 
+final results are packaged into a dedicated folder for use in downstream applications.
 
 """
 
@@ -47,12 +47,10 @@ print(f"Screening across {len(tgt_records)} target sequences...")
 # Status messages highlight the completion of an ESA step, distinguished by time-sleep commands.
 
 run_number = 1
-results_df = pd.DataFrame(columns = ["Name", "Target", "Identity (%)", "Most-Likely-ORF", "Direction", "Notes"])
+results_df = pd.DataFrame(columns = ["Name", "Target", "Identity-Score", "Most-Likely-ORF", "Direction", "Notes"])
 
+# Go sequence-by-sequence, repeating the 6FT + alignment pipeline for each.
 for record in in_records.values():
-    if run_number >= 2:
-        break
-
     time.sleep(0.5)
     print(f"\n*** Run #{run_number} of {len(in_records)} ***\n")
     time.sleep(0.5)
@@ -75,31 +73,35 @@ for record in in_records.values():
 
         ref_frame, optimal_seq, length, start_pos = select_seq(frame_set, verbose = verbose_flag)
         print(">> STATUS: Viable amino acid sequence found!\n")
+
         '''
 
         print(f">> STATUS: Computing best alignment among {len(tgt_records)} target entries...\n")
         time.sleep(0.5)
 
+        # Declare instance variables to keep a running tally of the highest-performing ORF alignment for
+        # the current sequence, using top_hits as a min heap for top-K data storage.
         max_lca, final_align_res, top_orf = 0, None, None
-        final_align_res = None
-        top_orf = None
         top_hits = defaultdict(list)
 
         for orf in all_orfs:
             align_res = align(target_set=tgt_records, top_hits=top_hits, query=orf, identity_ratio=0.98)
             # print(align_res["alignment"]) -> Intermediate Debugging Output
 
+            # If this ORF result yields a longer continuous overlap than we've seen before, update metadata
+            # and rehash the 'best' variables from above.
             if align_res.get('length') > max_lca:
                 max_lca = align_res.get('length')
                 final_align_res = align_res
                 top_orf = orf
         
+        # Print out the alignment object along with a suite of summary statistics.
         summarize_align_result(final_align_res)
         print(">> STATUS: Pairwise alignment finished!\n")
-        # notes = "A base insertion likely occurred, proceed with caution." if final_align_res["identity_pct"] < 70 else ""
         
-        results_df = data_export(results_df, record.id, strand_direction, top_orf, final_align_res["identity_pct"], 
-                                 final_align_res["target"], "")
+        # Add a new results row to our growing data repository.
+        results_df = data_export(results_df, record.id, strand_direction, top_orf, final_align_res.get("identity_pct"), 
+                                 final_align_res.get("target"), "")
     else:
         print(">> STATUS: No valid AA reads found.\n")
         results_df = data_export(results_df, record.id, strand_direction, "N/A", "N/A", "N/A")
@@ -109,24 +111,25 @@ for record in in_records.values():
     
     run_number += 1
 
-# Placeholder print to see if the top-K heap is working correctly.
-for target in top_hits.keys():
-    heap = top_hits.get(target)
-    print(target, sorted(heap, key=lambda x: x[0], reverse=True))
-
 # Preparing the CSV outpath by accounting for directory chains and Windows/Linux/macOS slash differences
 infile = infile.replace("\\", "/") if "\\" in infile else infile
 prefix = "" if os.path.dirname(infile) == "" else os.path.dirname(infile) + os.sep
 
-# Saving the results!
+# Save the aggregate results!
 base_filename = f"{prefix}ESA-Results-{time.strftime('%m-%d-%Y')}"
-results_filename = f"{base_filename}.csv"
+results_dir = base_filename
 
-#
+# Handle multiple runs in one day, rename accordingly.
 repeat_counter = 1
-while os.path.exists(results_filename):
-    results_filename = f"{base_filename}-{repeat_counter}.csv"
+while os.path.isdir(results_dir):
+    results_dir = f"{base_filename}-{repeat_counter}"
     repeat_counter += 1
+os.mkdir(results_dir)
 
-results_df.to_csv(results_filename, index = False)
+# Export the ORF-target association dataframe and the top-scoring ORFs per target to the
+# newly-created results directory.
+results_df.to_csv(f"{results_dir}/orf-target-mappings.csv", index=False)
+target_map_df = build_target_map(top_hits)
+target_map_df.to_csv(f"{results_dir}/top-orfs-by-target.csv", index=False)
+
 print("\n***\n\nProcess complete! Your results should be available for viewing in a CSV file.\n")

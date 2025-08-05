@@ -14,7 +14,7 @@ from Bio import Align
 from Bio.Align import substitution_matrices
 import heapq
 
-def align(target_set: dict, top_hits: dict, query, identity_ratio):
+def align(target_set: dict, top_hits: dict, query: str, identity_ratio: float):
     aligner = create_aligner()
     alignment_metadata = {'start': None, 'end': None, 'length': 0, 'target': None, 
                           'alignment': None, 'identity_pct': 0}
@@ -101,7 +101,7 @@ def create_aligner():
 
     return aligner
 
-def compute_lca(alignment, threshold=0.98):
+def compute_lca(alignment, threshold: float = 0.98):
     coverage = len(alignment)
     best_start = best_end = max_len = 0 # Setting "optimal" variables.
 
@@ -132,7 +132,7 @@ def compute_lca(alignment, threshold=0.98):
     # After parsing, return the start and end of the longest high-quality stretch.
     return best_start, best_end, max_len
 
-def display_statistics(alignment, verbose = True):
+def display_statistics(alignment, verbose: bool = True):
     # Computing relevant alignment statistics (three pieces of the pie, all complementary).
     identity = sum(1 for a, b in zip(alignment[0], alignment[1]) if a == b and a != "-")
     mismatches = sum(1 for a, b in zip(alignment[0], alignment[1]) if a != b and a != "-" and b != "-")
@@ -151,7 +151,7 @@ def display_statistics(alignment, verbose = True):
 
     return round(identity/alignment.length * 100, 1)
 
-def summarize_align_result(align_res):
+def summarize_align_result(align_res: dict):
     print("Optimal Pairwise Sequence Alignment (params = gap_pen: 10.0, extend_pen: 0.5, matrix: EBLOSUM62):\n")
     print(align_res.get("alignment"))
     display_statistics(align_res.get("alignment"), verbose = True)

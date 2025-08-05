@@ -18,7 +18,7 @@ import re
 import warnings
 warnings.filterwarnings('ignore')
 
-def generate_frames(input_seq, translate_direction, indicator_tag = ["M", "B"], verbose = True):
+def generate_frames(input_seq: str, translate_direction: str, indicator_tag = ["M", "B"], verbose = True):
     frame_set = {}
     direction_set = ["FWD"] * 3 + ["REV"] * 3 if translate_direction == "BOTH" else \
                     [translate_direction] * 3 # building the frame labels
@@ -36,7 +36,7 @@ def generate_frames(input_seq, translate_direction, indicator_tag = ["M", "B"], 
     
     return frame_set
 
-def get_translate_output(input_seq, translate_direction):
+def get_translate_output(input_seq: str, translate_direction: str):
     if translate_direction == "BOTH": # recursive call to account for both FWD and REV
         return get_translate_output(input_seq, "FWD") + get_translate_output(input_seq, "REV")
     elif translate_direction == "FWD":
@@ -50,7 +50,7 @@ def get_translate_output(input_seq, translate_direction):
     
     return aa_seqs
 
-def select_seq(frame_set, verbose = True):
+def select_seq(frame_set: list, verbose = True):
     frame_origin, global_max, start_pos, priority_orf = 1, 0, 0, ""
 
     for i in range(len(frame_set)):
@@ -71,7 +71,7 @@ def select_seq(frame_set, verbose = True):
     
     return (frame_origin, priority_orf, global_max, start_pos)
 
-def find_orfs(aa_seq, indicator_tag = ["M", "B"]):
+def find_orfs(aa_seq: str, indicator_tag = ["M", "B"]):
     end_match = indicator_tag[0] if indicator_tag[1] == "E" else ""
     leading_seq = "M" if end_match != "" else indicator_tag[0]
 
@@ -95,7 +95,7 @@ def find_orfs(aa_seq, indicator_tag = ["M", "B"]):
     
     return {'aa_seq': aa_seq, 'orf_set': suitable_orfs}
 
-def color_sequence(aa_seq, orf_set, label, indicator_tag = ["M", "B"]):
+def color_sequence(aa_seq: str, orf_set: list, label: str, indicator_tag = ["M", "B"]):
     colored_seq = aa_seq
     for orf in orf_set:
         if len(orf) == len(indicator_tag[0]): # solitary, one-character ORF (i.e. 'M-')
@@ -113,7 +113,7 @@ def color_sequence(aa_seq, orf_set, label, indicator_tag = ["M", "B"]):
     
     print(f"{label}:\n{colored_seq}\n")
 
-def enumerate_orfs(frame_set):
+def enumerate_orfs(frame_set: list):
     all_orfs = []
     for i in range(len(frame_set)):
         frame_data = list(frame_set.values())[i]
