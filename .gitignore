@@ -382,3 +382,7 @@ Icon[
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# --- Additional Security Measures ---
+.env
+backend/.env
