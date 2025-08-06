@@ -43,8 +43,8 @@ def data_export(df: pd.DataFrame, seq_name: str, direction: str, likely_orf: str
     new_row = {"Name": seq_name,
                "Target": target,
                "Identity-Score": align_perf,
-               "Most-Likely-ORF": likely_orf,
                "Direction": direction,
+               "Most-Likely-ORF": likely_orf,
                "Notes": notes}
     
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index = True) # Appending new row.

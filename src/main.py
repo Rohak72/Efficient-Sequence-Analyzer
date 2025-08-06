@@ -47,7 +47,7 @@ print(f"Screening across {len(tgt_records)} target sequences...")
 # Status messages highlight the completion of an ESA step, distinguished by time-sleep commands.
 
 run_number = 1
-results_df = pd.DataFrame(columns = ["Name", "Target", "Identity-Score", "Most-Likely-ORF", "Direction", "Notes"])
+results_df = pd.DataFrame(columns = ["Name", "Target", "Identity-Score", "Direction", "Most-Likely-ORF", "Notes"])
 
 # Go sequence-by-sequence, repeating the 6FT + alignment pipeline for each.
 for record in in_records.values():
