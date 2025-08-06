@@ -1,3 +1,5 @@
+import os
+
 from typing import Annotated
 from app.models.auth_tools import *
 from app.database import get_db
@@ -9,13 +11,15 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
+from dotenv import load_dotenv
 
+load_dotenv()
 router = APIRouter(prefix="/auth")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-SECRET_KEY = "45d7a1d0e6e1a053660adbf0404ba921d9f4d77ada8a408d50de33d13f106938"
+SECRET_KEY = os.getenv("AUTH_SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
