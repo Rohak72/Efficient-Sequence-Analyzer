@@ -48,6 +48,7 @@ print(f"Screening across {len(tgt_records)} target sequences...")
 
 run_number = 1
 results_df = pd.DataFrame(columns = ["Name", "Target", "Identity-Score", "Direction", "Most-Likely-ORF", "Notes"])
+top_hits = defaultdict(list)
 
 # Go sequence-by-sequence, repeating the 6FT + alignment pipeline for each.
 for record in in_records.values():
@@ -80,9 +81,8 @@ for record in in_records.values():
         time.sleep(0.5)
 
         # Declare instance variables to keep a running tally of the highest-performing ORF alignment for
-        # the current sequence, using top_hits as a min heap for top-K data storage.
+        # the current sequence, using top_hits (defined earlier) as a min heap for top-K data storage.
         max_lca, final_align_res, top_orf = 0, None, None
-        top_hits = defaultdict(list)
 
         for orf in all_orfs:
             align_res = align(target_set=tgt_records, top_hits=top_hits, query=orf, identity_ratio=0.98)
@@ -111,7 +111,7 @@ for record in in_records.values():
     
     run_number += 1
 
-# Preparing the CSV outpath by accounting for directory chains and Windows/Linux/macOS slash differences
+# Preparing the CSV outpath by accounting for directory chains and Windows/Linux/macOS slash differences.
 infile = infile.replace("\\", "/") if "\\" in infile else infile
 prefix = "" if os.path.dirname(infile) == "" else os.path.dirname(infile) + os.sep
 
