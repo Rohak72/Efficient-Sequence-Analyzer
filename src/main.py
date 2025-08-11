@@ -51,14 +51,17 @@ results_df = pd.DataFrame(columns = ["Name", "Target", "Identity-Score", "Direct
 top_hits = defaultdict(list)
 
 # Go sequence-by-sequence, repeating the 6FT + alignment pipeline for each.
-for record in in_records.values():
+for record_id, record_seq in in_records.items():
+    if run_number >= 2:
+        break
+
     time.sleep(0.5)
     print(f"\n*** Run #{run_number} of {len(in_records)} ***\n")
     time.sleep(0.5)
-    print(f"NAME: {record.id}")
-    print(f"SEQUENCE: {repr(record.seq)}\n")
+    print(f"NAME: {record_id}")
+    print(f"SEQUENCE: {record_seq[:5]}...{record_seq[-5:]} ({len(record_seq)} bp)\n")
     
-    frame_set = generate_frames(str(record.seq), strand_direction, verbose = verbose_flag)
+    frame_set = generate_frames(str(record_seq), strand_direction, verbose = verbose_flag)
     print(">> STATUS: Frame generation complete!\n")
     time.sleep(0.5)
 
@@ -100,11 +103,11 @@ for record in in_records.values():
         print(">> STATUS: Pairwise alignment finished!\n")
         
         # Add a new results row to our growing data repository.
-        results_df = data_export(results_df, record.id, strand_direction, top_orf, final_align_res.get("identity_pct"), 
+        results_df = data_export(results_df, record_id, strand_direction, top_orf, final_align_res.get("identity_pct"), 
                                  final_align_res.get("target"), "")
     else:
         print(">> STATUS: No valid AA reads found.\n")
-        results_df = data_export(results_df, record.id, strand_direction, "N/A", "N/A", "N/A")
+        results_df = data_export(results_df, record_id, strand_direction, "N/A", "N/A", "N/A")
     
     time.sleep(0.5)
     print(">> STATUS: Run data exported!")
