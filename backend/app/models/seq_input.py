@@ -15,6 +15,6 @@ class FrameRequest(BaseModel):
 
 class AlignmentRequest(BaseModel):
     query: StrictStr
-    target: Dict
+    target: Dict[str, str]
     threshold: Optional[PositiveFloat] = 0.98
     mode: Literal["SINGLE", "MULTI"]

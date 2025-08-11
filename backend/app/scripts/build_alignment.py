@@ -34,14 +34,14 @@ def align(query: str, target_set: dict, top_hits: dict, identity_ratio: float):
     '''
 
     best_chunk_lca, best_start, best_end = 0, None, None
-    for target in target_set.values():
+    for target_id, target_seq in target_set.items():
         # We're trying to determine how much of the target is covered by the query (ORF) -- the
         # alignment direction should reflect that.
-        alignments = aligner.align(target.seq, query)
+        alignments = aligner.align(target_seq, query)
         alignment = alignments[0]
 
         # Compute the global identity if there's a pairwise alignment to process.
-        identity_pct = 0.0 if alignment is None else float(calculate_identity_score(alignment, verbose=False))
+        identity_pct = 0.0 if alignment is None else float(calculate_identity_score(alignment))
 
         for i in range(len(alignment.aligned[0])): # Parsing each chunk!
             query_range = slice(alignment.aligned[1][i][0], alignment.aligned[1][i][1])
@@ -75,13 +75,13 @@ def align(query: str, target_set: dict, top_hits: dict, identity_ratio: float):
         # the metadata dictionary to represent the new best-fit target (and its LCA info).
         if best_chunk_lca > alignment_metadata.get('length'):
             alignment_metadata.update({'start': best_start, 'end': best_end, 'length': best_chunk_lca, 
-                                       'target': target.id.replace('\u200b', ''), 'alignment': alignment,
-                                       'identity_pct': identity_pct})
+                                       'target': target_id.replace('\u200b', ''), 
+                                       'alignment': str(alignment), 'identity_pct': identity_pct})
 
         # Reevaluate the heap to fit in the new datapoint if its identity score is higher than the
         # min element (at index 0). Being that this is a min-heap, we only spend O(logn) time on the
         # insertion/search step as opposed to the O(n) limitation of a standard list.
-        heap = top_hits[target.id.replace('\u200b', '')]
+        heap = top_hits[target_id.replace('\u200b', '')]
         if len(heap) < 5:
             heapq.heappush(heap, (identity_pct, best_chunk_lca, query)) # Populate heap if still vacant.
         elif identity_pct > heap[0][0]:

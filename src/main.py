@@ -12,10 +12,10 @@ final results are packaged into a dedicated folder for use in downstream applica
 
 """
 
-from collections import defaultdict
 from process_seq import *
 from align_ops import *
 from utils import *
+from collections import defaultdict
 import time
 import os
 
@@ -52,9 +52,6 @@ top_hits = defaultdict(list)
 
 # Go sequence-by-sequence, repeating the 6FT + alignment pipeline for each.
 for record_id, record_seq in in_records.items():
-    if run_number >= 2:
-        break
-
     time.sleep(0.5)
     print(f"\n*** Run #{run_number} of {len(in_records)} ***\n")
     time.sleep(0.5)
