@@ -44,27 +44,6 @@ def get_translate_output(input_seq, translate_direction):
     
     return aa_seqs
 
-def select_seq(frame_set, verbose = True):
-    frame_origin, global_max, start_pos, priority_orf = 1, 0, 0, ""
-
-    for i in range(len(frame_set)):
-        frame_data = list(frame_set.values())[i]
-        if len(frame_data["orf_set"]) == 0:
-            continue
-
-        temp_max = max(frame_data["orf_set"], key=len)
-        if len(temp_max) > global_max: # renaming the current "winner" (in terms of ORF length)
-            global_max = len(temp_max)
-            priority_orf = temp_max
-            frame_origin = i + 1
-            start_pos = frame_data["aa_seq"].find(priority_orf)
-    
-    if verbose:
-        print(f"Most Likely AA Sequence (Frame #{frame_origin}, Length - {global_max}, Start Position - "
-              f"{start_pos}): \n{priority_orf}\n")
-    
-    return (frame_origin, priority_orf, global_max, start_pos)
-
 def find_orfs(aa_seq):
     leading_seq = "M"
     start_positions = [match.start() for match in re.finditer(leading_seq, aa_seq)]

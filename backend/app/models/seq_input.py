@@ -1,5 +1,5 @@
 from pydantic import BaseModel, PositiveFloat, StrictStr, field_validator
-from typing import Literal, Optional
+from typing import Literal, Optional, Dict
 
 class FrameRequest(BaseModel):
     seq: StrictStr
@@ -15,5 +15,6 @@ class FrameRequest(BaseModel):
 
 class AlignmentRequest(BaseModel):
     query: StrictStr
-    target: StrictStr
+    target: Dict
     threshold: Optional[PositiveFloat] = 0.98
+    mode: Literal["SINGLE", "MULTI"]

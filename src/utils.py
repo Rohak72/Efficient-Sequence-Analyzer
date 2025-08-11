@@ -15,7 +15,9 @@ import pandas as pd
 
 def process_fasta(filename: str):
     try:
-        return SeqIO.to_dict(SeqIO.parse(filename, "fasta"))
+        raw_seq_library = SeqIO.to_dict(SeqIO.parse(filename, "fasta"))
+        simplified_fasta_seqs = {target_id: str(record.seq) for target_id, record in raw_seq_library.items()}
+        return simplified_fasta_seqs
     except FileNotFoundError: # Re-initiating the FASTA input if no file was found.
         print("File not found; please check your path/spelling and try again!")
         get_input("Enter the filepath/filename of your FASTA: ", ".fasta", "ending")

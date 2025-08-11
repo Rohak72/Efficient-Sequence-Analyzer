@@ -63,7 +63,7 @@ for record in in_records.values():
     time.sleep(0.5)
 
     empty_result = all(len(frame.get('orf_set')) == 0 for frame in frame_set.values())
-    if not empty_result: # If we yield no significant open reading frames...
+    if not empty_result: # If we yield some significant open reading frames...
         time.sleep(0.5)
         all_orfs = enumerate_orfs(frame_set)
         print(">> STATUS: Aggregating all viable amino acid sequences!\n")
@@ -85,7 +85,7 @@ for record in in_records.values():
         max_lca, final_align_res, top_orf = 0, None, None
 
         for orf in all_orfs:
-            align_res = align(target_set=tgt_records, top_hits=top_hits, query=orf, identity_ratio=0.98)
+            align_res = align(query=orf, target_set=tgt_records, top_hits=top_hits, identity_ratio=0.98)
             # print(align_res["alignment"]) -> Intermediate Debugging Output
 
             # If this ORF result yields a longer continuous overlap than we've seen before, update metadata

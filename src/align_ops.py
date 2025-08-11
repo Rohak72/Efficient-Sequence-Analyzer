@@ -14,7 +14,7 @@ from Bio import Align
 from Bio.Align import substitution_matrices
 import heapq
 
-def align(target_set: dict, top_hits: dict, query: str, identity_ratio: float):
+def align(query: str, target_set: dict, top_hits: dict, identity_ratio: float):
     aligner = create_aligner()
     alignment_metadata = {'start': None, 'end': None, 'length': 0, 'target': None, 
                           'alignment': None, 'identity_pct': 0}
