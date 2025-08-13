@@ -1,20 +1,40 @@
 from pydantic import BaseModel, PositiveFloat, StrictStr, field_validator
-from typing import Literal, Optional, Dict
+from typing import Literal, Optional, Dict, List
 
-class FrameRequest(BaseModel):
-    seq: StrictStr
+def nucleotide_check(dna_entry: StrictStr) -> str:
+    dna_entry = dna_entry.upper()
+    if not all(base in "ATCGN" for base in dna_entry):
+        raise ValueError("DNA must only contain nucleotides A, T, C, or G (N allowed also).")
+    return dna_entry
+
+class FrameEntry(BaseModel):
+    aa_seq: StrictStr
+    orf_set: List[StrictStr]
+
+# Can accomodate one-time requests (i.e. one-item list) as well as multi-seq records.
+class FrameRequestSingle(BaseModel):
+    sequence: StrictStr
     direction: Literal["FWD", "REV", "BOTH"] = "BOTH"
 
-    @field_validator('seq', mode='after')
+    @field_validator('sequence', mode='after')
     @classmethod
-    def nucleotide_check(cls, dna_entry: StrictStr):
-        dna_entry = dna_entry.upper()
-        if not all(base in "ATCGN" for base in dna_entry):
-            raise ValueError("DNA Sequence must only contain nucleotides A, T, C, or G (N allowed also).")
-        return dna_entry
+    def check_sequence(cls, v): return nucleotide_check(v)
 
-class AlignmentRequest(BaseModel):
-    query: StrictStr
-    target: Dict[str, str]
+class FrameRequestMulti(BaseModel):
+    sequences: Dict[str, StrictStr]
+    direction: Literal["FWD", "REV", "BOTH"] = "BOTH"
+
+    @field_validator('sequences', mode='after')
+    @classmethod
+    def check_sequences(cls, v: Dict[str, str]): return {k: nucleotide_check(val) for k, val in v.items()}
+
+class AlignmentRequestSingle(BaseModel):
+    query_frames: Dict[str, FrameEntry]
+    target: StrictStr
     threshold: Optional[PositiveFloat] = 0.98
-    mode: Literal["SINGLE", "MULTI"]
+
+class AlignmentRequestMulti(BaseModel):
+    query_frames: Dict[str, Dict[str, FrameEntry]]
+    targets: Dict[str, StrictStr]
+    threshold: Optional[PositiveFloat] = 0.98
+ 
