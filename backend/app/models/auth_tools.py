@@ -11,8 +11,7 @@ class User(Base):
     hashed_password = Column(String)
 
     fasta_files = relationship("FastaFile", back_populates="owner", cascade="all, delete-orphan")
-
-#User.metadata.create_all(bind=engine)
+    alignment_results = relationship("AlignmentResult", back_populates="owner", cascade="all, delete-orphan")
 
 class UserCreate(BaseModel):
     username: str

@@ -9,19 +9,8 @@ from sqlalchemy.orm import Session
 
 from app.routers.auth import get_current_active_user
 from app.database import get_db
+from app.scripts.s3_tools import *
 from app import models
-from dotenv import load_dotenv
-
-load_dotenv() 
-
-aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
-aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-bucket_name = os.getenv("S3_BUCKET_NAME")
-
-s3_client = boto3.client('s3', 
-                         aws_access_key_id=aws_access_key_id, 
-                         aws_secret_access_key=aws_secret_access_key, 
-                         region_name="us-east-2")
 
 router = APIRouter(prefix="/files")
 

@@ -19,3 +19,15 @@ class FastaFile(Base):
 
 class FastaUpdate(BaseModel):
     content: str
+
+class AlignmentResult(Base):
+    __tablename__ = "alignment-results"
+
+    id = Column(Integer, primary_key=True, index=True)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
+
+    s3_results_key = Column(String, unique=True)
+    s3_top_hits_key = Column(String, unique=True)
+
+    owner_id = Column(Integer, ForeignKey("users.id"))
+    owner = relationship("User", back_populates="alignment_results")
