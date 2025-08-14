@@ -4,6 +4,7 @@ from app.scripts.utils import *
 from app.scripts.s3_tools import *
 from app.models.seq_input import *
 from app.models.auth_tools import *
+from app.routers.auth import get_current_active_user
 from app.database import get_db
 from collections import defaultdict
 from fastapi import APIRouter, Depends
@@ -26,7 +27,7 @@ def build_frames_multi(data: FrameRequestMulti):
 
 @router.post("/align/single")
 def pairwise_align_single(data: AlignmentRequestSingle, db: Session = Depends(get_db), 
-                          current_user: User = Depends(get_db)):
+                          current_user: User = Depends(get_current_active_user)):
     top_hits = defaultdict(list)
     all_orfs = [orf for entry in data.query_frames.values() for orf in entry.orf_set]
     if len(all_orfs) == 0:

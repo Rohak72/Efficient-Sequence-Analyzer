@@ -12,6 +12,7 @@ generated to an external dataframe. Functions as a helper script for main.
 
 import io
 from app.models.denote_file import AlignmentResult
+from app.models.auth_tools import User
 from collections import defaultdict
 from Bio import SeqIO
 from datetime import datetime, timezone
@@ -74,8 +75,8 @@ def build_target_map(target_orf_hits: dict):
     df = pd.DataFrame(rows)
     return df
 
-def save_alignment_artifacts(results_df: pd.DataFrame, top_hits: defaultdict, final_align_res: dict,
-                             current_user, s3_client, bucket_name: str, db):
+def save_alignment_artifacts(results_df: pd.DataFrame, top_hits: defaultdict,
+                             current_user: User, s3_client, bucket_name: str, db):
     unique_id = uuid.uuid4()
     results_key = f"users/{current_user.id}/results/{unique_id}_orf_mappings.csv"
     top_hits_key = f"users/{current_user.id}/results/{unique_id}_top_hits.csv"
@@ -97,13 +98,6 @@ def save_alignment_artifacts(results_df: pd.DataFrame, top_hits: defaultdict, fi
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Couldn't upload alignment results.")
 
     db_result = AlignmentResult(
-        id=unique_id,
-        summary={
-            "query_name": final_align_res.get("target"), 
-            "best_target": final_align_res.get("target"), 
-            "identity_pct": final_align_res.get("identity_pct"), 
-            "lca_length": final_align_res.get("length")
-        },
         s3_results_key=results_key,
         s3_top_hits_key=top_hits_key,
         created_at=datetime.now(timezone.utc),

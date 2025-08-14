@@ -50,9 +50,10 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],
         raise credentials_exception
     return user
 
+# Flavor 1: Strict -- rejects requests if not authenticated to begin with.
 def get_current_active_user(current_user: Annotated[User, Depends(get_current_user)]):
     return current_user
-
+    
 def create_user(db: Session, user: UserCreate):
     hashed_password = pwd_context.hash(user.password)
     db_user = User(username=user.username, hashed_password=hashed_password)
