@@ -1,7 +1,3 @@
-import os
-import uuid
-import boto3
-
 from botocore.exceptions import ClientError
 from fastapi import APIRouter, Depends, Form, UploadFile, HTTPException, File, status
 from fastapi.responses import RedirectResponse
@@ -11,6 +7,7 @@ from app.routers.auth import get_active_user
 from app.database import get_db
 from app.scripts.s3_tools import *
 from app import models
+import uuid
 
 router = APIRouter(prefix="/files")
 

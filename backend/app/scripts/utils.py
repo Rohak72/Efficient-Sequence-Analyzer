@@ -10,43 +10,39 @@ generated to an external dataframe. Functions as a helper script for main.
 
 """
 
-import io
+from io import StringIO
+from typing import Dict
 from app.models.denote_file import AlignmentResult
 from app.models.auth_tools import User
 from collections import defaultdict
 from Bio import SeqIO
 from datetime import datetime, timezone
-from fastapi import HTTPException, status
+from fastapi import UploadFile, HTTPException, status
 
 import pandas as pd
 import uuid
 
-def process_fasta(filename: str):
+async def process_fasta_upload(fasta_file: UploadFile) -> Dict[str, str]:
+    contents = await fasta_file.read()
+    stream = StringIO(contents.decode("utf-8"))
+
     try:
-        raw_seq_library = SeqIO.to_dict(SeqIO.parse(filename, "fasta"))
-        simplified_fasta_seqs = {target_id: str(record.seq) for target_id, record in raw_seq_library.items()}
-        return simplified_fasta_seqs
-    except FileNotFoundError: # Re-initiating the FASTA input if no file was found.
-        print("File not found; please check your path/spelling and try again!")
-        get_input("Enter the filepath/filename of your FASTA: ", ".fasta", "ending")
+        raw_seq_library = SeqIO.to_dict(SeqIO.parse(stream, "fasta"))
+    except Exception as e:
+        raise ValueError(f"Failed to parse FASTA file: {str(e)}.")
 
-def get_input(prompt: str, valid_set: list, mode: str = "options"):
-    while True:
-        value = input(prompt).strip() # Removing extraneous whitespace from the input string.
-        
-        if mode == "options" and value.upper() not in valid_set:
-            print(f"Sorry, your response must be one of the following: {', '.join(valid_set)}")
-            continue
-        elif mode == "substr" and not all(x.isalpha() for x in value):
-            print(f"Sorry, your response must only be comprised of {valid_set}")
-            continue
-        elif mode == "ending" and not value.endswith(valid_set):
-            print(f"Sorry, your response must end with {valid_set}")
-            continue
-        else:
-            break
+    simplified_fasta_seqs = {
+        record_id: str(record.seq)
+        for record_id, record in raw_seq_library.items()
+    }
 
-    return value
+    return simplified_fasta_seqs
+
+def infer_direction(query_frames: dict) -> str:
+    first_key = next(iter(query_frames))
+    if len(query_frames) == 6:
+        return "BOTH"
+    return "FWD" if "FWD" in first_key else "REV"
 
 def data_export(df: pd.DataFrame, seq_name: str, direction: str, likely_orf: str, align_perf: float, 
                 target: str, notes: str):
@@ -81,12 +77,12 @@ def save_alignment_artifacts(results_df: pd.DataFrame, top_hits: defaultdict,
     results_key = f"users/{current_user.id}/results/{unique_id}_orf_mappings.csv"
     top_hits_key = f"users/{current_user.id}/results/{unique_id}_top_hits.csv"
 
-    results_buffer = io.StringIO()
+    results_buffer = StringIO()
     results_df.to_csv(results_buffer, index=False)
     results_buffer.seek(0)
 
     top_hits_df = build_target_map(top_hits)
-    top_hits_buffer = io.StringIO()
+    top_hits_buffer = StringIO()
     top_hits_df.to_csv(top_hits_buffer, index=False)
     top_hits_buffer.seek(0)
 
