@@ -55,7 +55,6 @@ def pairwise_align_single(data: AlignmentRequestSingle, db: Session = Depends(ge
 
     if current_user:
         results_key, top_hits_key = save_alignment_artifacts(results_df=results_df, top_hits=top_hits, 
-                                                             final_align_res=final_align_res, 
                                                              current_user=current_user, s3_client=s3_client, 
                                                              bucket_name=bucket_name, db=db)
         presigned_result_url = generate_presigned_url(results_key, filename="orf_mappings.csv")
@@ -71,5 +70,6 @@ def pairwise_align_single(data: AlignmentRequestSingle, db: Session = Depends(ge
 @router.post("/align/multi")
 def pairwise_align_multi(data: AlignmentRequestMulti):
     top_hits = defaultdict(list)
+
     align_res = align(query=data.query, target_set=data.target, top_hits=top_hits, identity_ratio=data.threshold)
     return align_res

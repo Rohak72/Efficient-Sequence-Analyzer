@@ -17,6 +17,7 @@ load_dotenv()
 router = APIRouter(prefix="/auth")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 SECRET_KEY = os.getenv("AUTH_SECRET_KEY")
@@ -55,11 +56,24 @@ def get_active_user(current_user: Annotated[User, Depends(get_current_user)]):
     return current_user
 
 # Flavor 2: Flexible -- allows logic to proceed even in the event of an auth failure.
-def get_optional_user(request: Request) -> Optional[User]:
+def get_optional_user(
+    token: Optional[str] = Depends(optional_oauth2_scheme),
+    db: Session = Depends(get_db)) -> Optional[User]:
+    if token is None:
+        return None  # User not logged in
+
     try:
-        return get_active_user(request=request)
-    except Exception:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            return None
+    except JWTError:
         return None
+
+    user = filter_by_username(db, username=username)
+    if user is None:
+        return None
+    return user
     
 def create_user(db: Session, user: UserCreate):
     hashed_password = pwd_context.hash(user.password)
