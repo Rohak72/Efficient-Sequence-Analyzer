@@ -20,12 +20,11 @@ def generate_frames(input_seq, translate_direction):
     frame_set = {}
     direction_set = ["FWD"] * 3 + ["REV"] * 3 if translate_direction == "BOTH" else \
                     [translate_direction] * 3 # building the frame labels
-    mapping = {"FWD": "5'3'", "REV": "3'5'"}
 
     aa_seqs = get_translate_output(input_seq, translate_direction)
     
     for i in range(len(aa_seqs)):
-        entry = f"Frame #{i + 1} ({direction_set[i]} / {mapping[direction_set[i]]})" # label
+        entry = f"Frame #{i + 1} ({direction_set[i]})" # label
         frame_set[entry] = find_orfs(aa_seqs[i]) # extracting the ORF set
     
     return frame_set

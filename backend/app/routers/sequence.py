@@ -1,10 +1,10 @@
-from app.scripts.frame_retrieve import generate_frames
-from app.scripts.build_alignment import align
+from app.scripts.frame_retrieve import *
+from app.scripts.build_alignment import *
 from app.scripts.utils import *
 from app.scripts.s3_tools import *
 from app.models.seq_input import *
 from app.models.auth_tools import *
-from app.routers.auth import get_current_active_user
+from app.routers.auth import get_optional_user
 from app.database import get_db
 from collections import defaultdict
 from fastapi import APIRouter, Depends
@@ -27,28 +27,30 @@ def build_frames_multi(data: FrameRequestMulti):
 
 @router.post("/align/single")
 def pairwise_align_single(data: AlignmentRequestSingle, db: Session = Depends(get_db), 
-                          current_user: User = Depends(get_current_active_user)):
+                          current_user: Optional[User] = Depends(get_optional_user)):
     top_hits = defaultdict(list)
     all_orfs = [orf for entry in data.query_frames.values() for orf in entry.orf_set]
+
+    first_key = next(iter(data.query_frames))
+    if len(data.query_frames) == 6:
+        direction = ["FWD"] * 3 + ["REV"] * 3
+    elif "FWD" in first_key:
+        direction = ["FWD"] * 3
+    else:
+        direction = ["REV"] * 3
+
     if len(all_orfs) == 0:
         return {'detail': 'No valid ORFs found in input.'}
     
     results_df = pd.DataFrame(columns = ["Name", "Target", "Identity-Score", "Direction", 
                                          "Most-Likely-ORF", "Notes"])
-    max_lca, final_align_res, top_orf = 0, None, None
-    for orf in all_orfs:
-        align_res = align(query=orf, target_set={'': data.target}, top_hits=top_hits, identity_ratio=data.threshold)
-        if align_res.get('length') > max_lca:
-                max_lca = align_res.get('length')
-                final_align_res = align_res
-                top_orf = orf
+    results_df, final_align_res = batch_alignment_cycle(direction=direction, record_id="", orf_set=all_orfs, 
+                                                        target_set={'': data.target}, top_hits=top_hits,
+                                                        curr_results_data=results_df, 
+                                                        align_threshold=data.threshold)
     
     if final_align_res is None:
-        return {'detail': 'No filled alignment was determined.'}
-
-    results_df = data_export(results_df, "", "", top_orf, final_align_res.get("identity_pct"), 
-                             final_align_res.get("target"), "")
-    final_align_res.update({'top_orf': top_orf})
+        return {'detail': 'No final alignment was determined.'}
     response = {'alignment_result': final_align_res}
 
     if current_user:

@@ -1,11 +1,11 @@
 import os
 
-from typing import Annotated
+from typing import Annotated, Optional
 from app.models.auth_tools import *
 from app.database import get_db
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from jose import JWTError, jwt
@@ -51,8 +51,15 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],
     return user
 
 # Flavor 1: Strict -- rejects requests if not authenticated to begin with.
-def get_current_active_user(current_user: Annotated[User, Depends(get_current_user)]):
+def get_active_user(current_user: Annotated[User, Depends(get_current_user)]):
     return current_user
+
+# Flavor 2: Flexible -- allows logic to proceed even in the event of an auth failure.
+def get_optional_user(request: Request) -> Optional[User]:
+    try:
+        return get_active_user(request=request)
+    except Exception:
+        return None
     
 def create_user(db: Session, user: UserCreate):
     hashed_password = pwd_context.hash(user.password)

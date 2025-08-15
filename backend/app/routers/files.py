@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Form, UploadFile, HTTPException, File, s
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
-from app.routers.auth import get_current_active_user
+from app.routers.auth import get_active_user
 from app.database import get_db
 from app.scripts.s3_tools import *
 from app import models
@@ -15,7 +15,7 @@ from app import models
 router = APIRouter(prefix="/files")
 
 def retrieval_by_id(file_id: int, db: Session = Depends(get_db), 
-                    current_user: models.User = Depends(get_current_active_user)):
+                    current_user: models.User = Depends(get_active_user)):
     db_file = db.query(models.FastaFile).filter(models.FastaFile.id == file_id).first()
 
     # Security Check #1: Does the file even exist in our records?
@@ -35,7 +35,7 @@ def retrieval_by_id(file_id: int, db: Session = Depends(get_db),
 def create_upload_file(file: UploadFile = File(..., description="User's FASTA Query"),
                        type: models.FileType = Form(...),
                        db: Session = Depends(get_db),
-                       current_user: models.User = Depends(get_current_active_user)):
+                       current_user: models.User = Depends(get_active_user)):
     if not file.filename.lower().endswith(('.fasta', '.fa', '.fna', '.faa')):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Invalid file extension -- only FASTA formats allowed.")
@@ -59,12 +59,12 @@ def create_upload_file(file: UploadFile = File(..., description="User's FASTA Qu
 # READ
 
 @router.get("/")
-def read_file_list(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_active_user)):
+def read_file_list(db: Session = Depends(get_db), current_user: models.User = Depends(get_active_user)):
     return db.query(models.FastaFile).filter(models.FastaFile.owner_id == current_user.id).all()
 
 @router.get("/{file_id}/read")
 def read_file_contents(file_id: int, db: Session = Depends(get_db), 
-                       current_user: models.User = Depends(get_current_active_user)):
+                       current_user: models.User = Depends(get_active_user)):
     db_file = retrieval_by_id(file_id, db, current_user)
     
     try:
@@ -80,7 +80,7 @@ def read_file_contents(file_id: int, db: Session = Depends(get_db),
 
 @router.get("/{file_id}/download")
 def read_download_file(file_id: int, db: Session = Depends(get_db), 
-                       current_user: models.User = Depends(get_current_active_user)):
+                       current_user: models.User = Depends(get_active_user)):
     db_file = retrieval_by_id(file_id, db, current_user)
     
     try:
@@ -100,7 +100,7 @@ def read_download_file(file_id: int, db: Session = Depends(get_db),
 
 @router.put("/{file_id}/edit")
 def update_file_contents(file_id: int, new_contents: models.FastaUpdate, db: Session = Depends(get_db), 
-                         current_user: models.User = Depends(get_current_active_user)):
+                         current_user: models.User = Depends(get_active_user)):
     db_file = retrieval_by_id(file_id, db, current_user)
     
     try:
@@ -119,7 +119,7 @@ def update_file_contents(file_id: int, new_contents: models.FastaUpdate, db: Ses
 # DELETE
 
 @router.delete("/{file_id}")
-def delete_file(file_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_active_user)):
+def delete_file(file_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_active_user)):
     db_file = retrieval_by_id(file_id, db, current_user)
 
     try:

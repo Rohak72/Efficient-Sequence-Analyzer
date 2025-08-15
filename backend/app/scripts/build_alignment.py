@@ -10,9 +10,27 @@ the end for clarity; the final identity score is returned to the user.
 
 """
 
+from typing import Dict, List
 from Bio import Align
 from Bio.Align import substitution_matrices
+from app.scripts.utils import *
 import heapq
+
+def batch_alignment_cycle(direction: str, record_id: str, orf_set: List[str], target_set: Dict[str, str], 
+                          top_hits: Dict[str, List], curr_results_data: pd.DataFrame, align_threshold: float):
+    max_lca, final_align_res, top_orf = 0, None, None
+    for orf in orf_set:
+        align_res = align(query=orf, target_set=target_set, top_hits=top_hits, identity_ratio=align_threshold)
+        if align_res.get('length') > max_lca:
+                max_lca = align_res.get('length')
+                final_align_res = align_res
+                top_orf = orf
+
+    results_df = data_export(curr_results_data, record_id, direction, top_orf, 
+                             final_align_res.get("identity_pct"), final_align_res.get("target"), "")
+    final_align_res.update({'top_orf': top_orf})
+
+    return results_df, final_align_res
 
 def align(query: str, target_set: dict, top_hits: dict, identity_ratio: float):
     aligner = create_aligner()
