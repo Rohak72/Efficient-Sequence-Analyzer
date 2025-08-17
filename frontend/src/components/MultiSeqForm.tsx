@@ -40,6 +40,7 @@ export const MultiSeqForm: React.FC = () => {
         return data.sequences;
     };
     
+    // REPLACE IT WITH THIS NEW, SIMPLER FUNCTION
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!inputFile || !targetFile) {
@@ -49,37 +50,37 @@ export const MultiSeqForm: React.FC = () => {
         
         setLoading(true);
         setApiError(null);
-        setFrameResponse(null);
-        setAlignResponse(null);
+        setAlignResponse(null); // We only need one response state now
+        setFrameResponse(null); // This state is no longer used here
 
         try {
-            const inputSequences = await parseFastaFile(inputFile);
-            const targetSequences = await parseFastaFile(targetFile);
+            // *** CHANGED: Create a single FormData object ***
+            const formData = new FormData();
+            // The backend expects the raw File object, not a ServerFile object
+            if (!('name' in inputFile) || !('name' in targetFile)) {
+                throw new Error("Cannot process a saved file directly. Please re-upload for now.");
+            }
+            formData.append('input_fasta', inputFile as File);
+            formData.append('target_fasta', targetFile as File);
+            formData.append('direction', direction);
 
-            const framesRes = await fetch('http://localhost:8000/frames/multi', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sequences: inputSequences, direction: direction }),
-            });
-            if (!framesRes.ok) throw new Error('Failed to generate translation frames.');
-            const framesData = await framesRes.json();
-            setFrameResponse(framesData);
-
-            const alignBody = {
-                query_frames: framesData,
-                targets: targetSequences,
-                threshold: 0.98
-            };
-
+            // *** CHANGED: Use the correct fetcher (authenticated or not) ***
             const fetcher = isAuthenticated ? fetchWithAuth : fetch;
-            const alignRes = await fetcher('http://localhost:8000/align/multi', {
+
+            // *** CHANGED: Make ONE single, efficient API call to the new endpoint ***
+            const alignRes = await fetcher('http://localhost:8000/process/multi', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(alignBody)
+                body: formData, // The browser sets the correct headers for FormData
             });
-             if (!alignRes.ok) throw new Error('Failed to perform alignment.');
-             const alignData = await alignRes.json();
-             setAlignResponse(alignData);
+
+            if (!alignRes.ok) {
+                const errorData = await alignRes.json();
+                throw new Error(errorData.detail || 'Failed to process alignment.');
+            }
+            
+            // *** CHANGED: Set the lean summary data from the response ***
+            const summaryData = await alignRes.json();
+            setAlignResponse(summaryData);
 
         } catch (err: any) {
             setApiError(err.message);
@@ -152,10 +153,9 @@ export const MultiSeqForm: React.FC = () => {
             </div>
             
             {/* --- RESULTS DISPLAY --- */}
-            {alignResponse && frameResponse && (
+            {alignResponse && (
                 <MultiAlignResultDisplay 
-                    alignData={alignResponse}
-                    frameData={frameResponse}
+                    alignSummaryData={alignResponse}
                     isAuthenticated={isAuthenticated}
                 />
             )}
