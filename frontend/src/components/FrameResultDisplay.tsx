@@ -20,10 +20,20 @@ interface ResultProps {
 // In src/components/FormResultDisplay.tsx
 
 const HighlightedSequence: React.FC<{ sequence: string; orfs: string[] }> = ({ sequence, orfs }) => {
+  const [copiedText, setCopiedText] = React.useState<string | null>(null);
+
   // If there's nothing to highlight, just return the plain sequence.
   if (!orfs || orfs.length === 0 || !sequence) {
     return <>{sequence}</>;
   }
+
+  // --- A handler to copy text and provide feedback ---
+  const handleCopy = (textToCopy: string) => {
+    navigator.clipboard.writeText(textToCopy);
+    setCopiedText(textToCopy);
+    // Reset the "copied" state after 2 seconds
+    setTimeout(() => setCopiedText(null), 2000);
+  };
 
   // --- STEP 1: Find all match intervals ---
   const intervals: { start: number; end: number }[] = [];
@@ -64,11 +74,18 @@ const HighlightedSequence: React.FC<{ sequence: string; orfs: string[] }> = ({ s
     // Add the plain text part before the current highlight
     result.push(sequence.substring(lastIndex, interval.start));
     
+    const orfText = sequence.substring(interval.start, interval.end);
+    const isCopied = copiedText === orfText;
+
     // Add the highlighted part
     result.push(
-      <span key={interval.start} className="bg-teal-100 text-teal-800 font-bold rounded px-1 transition cursor-pointer 
-      hover:bg-emerald-100 hover:ring-2 hover:ring-teal-300" onClick={() => navigator.clipboard.writeText(`${sequence}`)}>
-        {sequence.substring(interval.start, interval.end)}
+      <span key={interval.start} onClick={() => handleCopy(orfText)} title={"Click to copy ORF!"} 
+      className={
+        isCopied
+            ? "bg-emerald-300 text-emerald-900 font-bold rounded px-1 transition-all cursor-pointer ring-2 ring-emerald-400"
+            : "bg-teal-100 text-teal-800 font-bold rounded px-1 transition-all cursor-pointer hover:bg-emerald-100 hover:ring-2 hover:ring-teal-300"
+      }>
+        {orfText}
       </span>
     );
     lastIndex = interval.end;
@@ -178,7 +195,7 @@ export const FrameResultDisplay: React.FC<ResultProps> = ({ data }) => {
               <div className="flex-shrink-0">
                  <button
                     onClick={() => handleCopy(frameName, frameData.aa_seq)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-md hover:bg-gray-200"
+                    className="cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-md hover:bg-gray-200"
                     aria-label={`Copy ${frameName}`}
                   >
                   {copiedFrame === frameName ? <Check size={16} className="text-green-500" /> : <Copy size={16} className="text-gray-500" />}
