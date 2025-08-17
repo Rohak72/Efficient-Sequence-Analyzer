@@ -83,7 +83,7 @@ const HighlightedSequence: React.FC<{ sequence: string; orfs: string[] }> = ({ s
 // =======================================================
 // === THE MAIN RESULTS DISPLAY COMPONENT ===
 // =======================================================
-export const FormResultDisplay: React.FC<ResultProps> = ({ data }) => {
+export const FrameResultDisplay: React.FC<ResultProps> = ({ data }) => {
   const [copiedFrame, setCopiedFrame] = React.useState<string | null>(null);
   const frameNames = Object.keys(data);
 

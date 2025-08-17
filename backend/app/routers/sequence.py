@@ -53,19 +53,7 @@ def pairwise_align_single(data: AlignmentRequestSingle, db: Session = Depends(ge
     if final_align_res is None:
         return {'detail': 'No final alignment was determined.'}
     response = {'alignment_result': final_align_res}
-
-    if current_user:
-        results_key, top_hits_key = save_alignment_artifacts(results_df=results_df, top_hits=top_hits, 
-                                                             current_user=current_user, s3_client=s3_client, 
-                                                             bucket_name=bucket_name, db=db)
-        presigned_result_url = generate_presigned_url(results_key, filename="orf_mappings.csv")
-        presigned_hits_url = generate_presigned_url(top_hits_key, filename="top_hits.csv")
-
-        response['download_links'] = {
-            'orf_mappings': presigned_result_url,
-            'top_hits': presigned_hits_url
-        }
-        
+    
     return response
 
 @router.post("/align/multi")
