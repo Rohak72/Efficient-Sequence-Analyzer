@@ -164,7 +164,7 @@ export const SingleSeqForm: React.FC = () => {
               placeholder="Paste your DNA sequence here (e.g. ATGATTG...)!"
               className="block w-full h-48 px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none 
               focus:ring-2 focus:ring-[#fc5391] focus:border-[#fc5391] transition duration-150 ease-in-out font-mono text-sm"
-              style={{ height: '96px' }}
+              style={{ height: '72px' }}
             />
             {errors.sequence && <p className="mt-1 text-sm text-red-600">{errors.sequence[0]}</p>}
           </div>
@@ -179,10 +179,10 @@ export const SingleSeqForm: React.FC = () => {
               name="targetSequence"
               value={targetSequence}
               onChange={(e) => setTargetSequence(e.target.value)}
-              placeholder="Paste a target protein sequence here to run pairwise alignment..."
+              placeholder="Paste your target amino acid sequence here to run a pairwise alignment!"
               className="block w-full h-48 px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none 
               focus:ring-2 focus:ring-[#fc5391] focus:border-[#fc5391] transition duration-150 ease-in-out font-mono text-sm"
-              style={{ height: '96px' }}
+              style={{ height: '72px' }}
             />
             {errors.targetSequence && <p className="mt-1 text-sm text-red-600">{errors.targetSequence[0]}</p>}
           </div>
@@ -213,7 +213,7 @@ export const SingleSeqForm: React.FC = () => {
           <div className="flex justify-center">
             {/* Submit Button */}
             <button type="submit" disabled={loading} className="group relative inline-flex h-12 items-center justify-center 
-            overflow-hidden rounded-md border border-neutral-200 bg-white font-medium">
+            overflow-hidden rounded-md border border-neutral-200 bg-white font-medium cursor-pointer">
               <div className="inline-flex h-12 translate-y-0 items-center justify-center px-6 text-black text-md transition 
               duration-500 group-hover:-translate-y-[150%]">
                 <Send className="mr-2" size={18}/>

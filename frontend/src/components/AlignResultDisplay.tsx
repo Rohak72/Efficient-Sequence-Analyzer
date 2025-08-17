@@ -65,20 +65,21 @@ export const AlignResultDisplay: React.FC<AlignResultProps> = ({ data, isAuthent
             <h3 className="text-2xl font-bold text-gray-800">Pairwise Alignment Summary</h3>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-center">
             <div className="p-4 bg-indigo-50 rounded-lg">
               <p className="text-sm font-semibold text-indigo-800">Identity Score</p>
               <p className="text-3xl font-bold text-indigo-600">{identity_pct.toFixed(1)}%</p>
             </div>
-            <div className="p-4 bg-green-50 rounded-lg">
-              <p className="text-sm font-semibold text-green-800">Best Target Match</p>
-              <p className="text-xl font-mono text-green-600 truncate pt-2" title={target || 'N/A'}>{target || 'N/A'}</p>
-            </div>
             <div className="p-4 bg-sky-50 rounded-lg">
               <p className="text-sm font-semibold text-sky-800">Most Likely ORF</p>
-              <p className="text-lg font-mono text-sky-600 truncate pt-2" title={top_orf}>
-                {top_orf ? `${top_orf.slice(0, 15)}...` : 'N/A'}
-              </p>
+              <div className="overflow-hidden pt-2">
+                <p 
+                    className="text-lg font-mono text-sky-600 whitespace-nowrap overflow-x-auto pb-2"
+                    title={top_orf}
+                >
+                    {top_orf || 'N/A'}
+                </p>
+              </div>
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import { SingleSeqForm } from './SingleSeqForm'
+import { MultiSeqForm } from './MultiSeqForm'
 
 // The TabPanel is perfect as is.
 function CustomTabPanel(props: { children?: React.ReactNode; index: number; value: number }) {
@@ -90,7 +91,7 @@ export const FormOverhead: React.FC = () => {
         <SingleSeqForm />
       </CustomTabPanel>
       <CustomTabPanel value={value} index={1}>
-        Item Two Content
+        <MultiSeqForm />
       </CustomTabPanel>
     </Box>
   );

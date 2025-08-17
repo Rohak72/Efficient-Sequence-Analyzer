@@ -6,7 +6,7 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext"; // Your auth context is key!
 import { useNavigate } from "react-router-dom";
-import { UploadModal } from "./UploadModal";
+import { UploadModal } from "./EditorUploadModal";
 import { AuthPromptModal } from "./AuthPromptModal"
 
 // Define the shape of a file object from your backend
