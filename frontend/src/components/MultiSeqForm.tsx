@@ -14,31 +14,11 @@ export const MultiSeqForm: React.FC = () => {
     const [apiError, setApiError] = useState<string | null>(null);
     
     // States for API responses
-    const [frameResponse, setFrameResponse] = useState<any | null>(null);
+    const [_frameResponse, setFrameResponse] = useState<any | null>(null);
     const [alignResponse, setAlignResponse] = useState<any | null>(null);
 
     const { token, fetchWithAuth } = useAuth();
     const isAuthenticated = !!token;
-
-    // This function needs to be updated to handle fetching ServerFile content
-    // For now, it shows an alert and proceeds only with local File objects.
-    const parseFastaFile = async (file: File | ServerFile): Promise<Record<string, string>> => {
-        const formData = new FormData();
-        
-        if (!('name' in file)) {
-            // In a real app, you'd have an endpoint like /files/download/{file.id}
-            // and you would fetch the file content here before appending it.
-            alert("Fetching existing server files for processing is not implemented. Please re-upload the file for now.");
-            throw new Error("Server file fetching not implemented.");
-        }
-        
-        formData.append('fasta_file', file);
-        
-        const res = await fetch('http://localhost:8000/parseFASTA', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || `Failed to parse ${file.name}.`);
-        return data.sequences;
-    };
     
     // REPLACE IT WITH THIS NEW, SIMPLER FUNCTION
     const handleSubmit = async (e: React.FormEvent) => {

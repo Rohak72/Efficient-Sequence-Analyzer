@@ -3,13 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { FrameResultDisplay } from './FrameResultDisplay';
 import { useAuth } from '../contexts/AuthContext';
-import { BarChart2, ChevronDown, Download, FileText, UserCheck, AlertCircle, Search, Loader2 } from 'lucide-react';
+import { BarChart2, ChevronUp, ChevronDown, Download, FileText, UserCheck, AlertCircle, Search, Loader2 } from 'lucide-react';
 
 // --- TYPE DEFINITIONS ---
 interface AlignmentResult {
   identity_pct: number;
   target: string | null;
   top_orf: string;
+  alignment: string | null;
   detail?: string;
 }
 
@@ -29,32 +30,49 @@ interface MultiAlignResultDisplayProps {
 }
 
 // --- CHILD COMPONENT: AlignmentMetricsCard ---
-const AlignmentMetricsCard: React.FC<{ result: AlignmentResult }> = ({ result }) => (
-  <div className="bg-white rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.08)] p-6">
-    <div className="flex items-center gap-x-3 mb-4">
-      <BarChart2 size={28} className="text-indigo-600" />
-      <h3 className="text-2xl font-bold text-gray-800">Alignment Summary</h3>
+const AlignmentMetricsCard: React.FC<{ result: AlignmentResult }> = ({ result }) => {
+  const [isAlignmentVisible, setIsAlignmentVisible] = useState(false);
+  const { alignment } = result;
+
+  return (
+    // Added overflow-hidden to the main container
+    <div className="bg-white rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.08)] overflow-hidden">
+      <div className="p-6">
+        <div className="flex items-center gap-x-3 mb-4">
+          <BarChart2 size={28} className="text-indigo-600" />
+          <h3 className="text-2xl font-bold text-gray-800">Alignment Summary</h3>
+        </div>
+        {/* This grid part is unchanged */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+          <div className="p-4 bg-indigo-50 rounded-lg"><p className="text-sm font-semibold text-indigo-700">Identity Score</p><p className="text-3xl font-bold text-indigo-600 pt-1">{result.identity_pct.toFixed(1)}%</p></div>
+          <div className="p-4 bg-green-50 rounded-lg"><p className="text-sm font-semibold text-green-700">Best Target Match</p><p className="text-xl font-mono text-green-600 truncate pt-2" title={result.target || 'N/A'}>{result.target || 'N/A'}</p></div>
+          <div className="p-4 bg-sky-50 rounded-lg"><p className="text-sm font-semibold text-sky-700">Most Likely ORF</p><div className="overflow-hidden pt-1"><p className="text-lg font-mono text-sky-600 whitespace-nowrap overflow-x-auto pb-2" title={result.top_orf}>{result.top_orf || 'N/A'}</p></div></div>
+        </div>
+      </div>
+    
+      {/* --- ADDED: The exact toggle and readout sections from your example --- */}
+      {/* --- TOGGLE FOR ALIGNMENT READOUT --- */}
+      {alignment && (
+        <div className="border-t border-gray-200 px-6 py-3 bg-gray-50 hover:bg-gray-100 transition-colors">
+            <button
+            onClick={() => setIsAlignmentVisible(!isAlignmentVisible)}
+            className="flex items-center justify-between w-full text-left font-semibold text-gray-700 "
+            >
+            <span>{isAlignmentVisible ? 'Hide' : 'Show'} Alignment Readout</span>
+            {isAlignmentVisible ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            </button>
+        </div>
+      )}
+      
+      {/* --- ALIGNMENT READOUT SECTION (Conditional) --- */}
+      {isAlignmentVisible && alignment && (
+        <div className="p-6 border-t border-gray-200 bg-gray-800 text-white font-mono text-sm overflow-x-auto">
+          <pre><code>{alignment}</code></pre>
+        </div>
+      )}
     </div>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-        <div className="p-4 bg-indigo-50 rounded-lg">
-            <p className="text-sm font-semibold text-indigo-700">Identity Score</p>
-            <p className="text-3xl font-bold text-indigo-600 pt-1">{result.identity_pct.toFixed(1)}%</p>
-        </div>
-        <div className="p-4 bg-green-50 rounded-lg">
-            <p className="text-sm font-semibold text-green-700">Best Target Match</p>
-            <p className="text-xl font-mono text-green-600 truncate pt-2" title={result.target || 'N/A'}>{result.target || 'N/A'}</p>
-        </div>
-        <div className="p-4 bg-sky-50 rounded-lg">
-            <p className="text-sm font-semibold text-sky-700">Most Likely ORF</p>
-            <div className="overflow-hidden pt-1">
-                <p className="text-lg font-mono text-sky-600 whitespace-nowrap overflow-x-auto pb-2" title={result.top_orf}>
-                    {result.top_orf || 'N/A'}
-                </p>
-            </div>
-        </div>
-    </div>
-  </div>
-);
+  )
+};
 
 // --- CHILD COMPONENT: ExportCard ---
 interface ExportCardProps {

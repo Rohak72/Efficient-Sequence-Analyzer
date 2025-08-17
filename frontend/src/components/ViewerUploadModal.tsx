@@ -1,7 +1,7 @@
 // src/components/FileUploader.tsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { UploadCloud, File as FileIcon, X, Server, Loader2, Search } from 'lucide-react';
+import { UploadCloud, File as FileIcon, X, Server, Loader2 } from 'lucide-react';
 
 // --- TYPE DEFINITIONS ---
 export interface ServerFile {
@@ -23,7 +23,7 @@ interface FileUploaderProps {
 }
 
 export const FileUploader: React.FC<FileUploaderProps> = ({ fileType, selectedFile, onFileChange, label }) => {
-  const { token, fetchWithAuth } = useAuth();
+  const { token } = useAuth();
   const isAuthenticated = !!token;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
