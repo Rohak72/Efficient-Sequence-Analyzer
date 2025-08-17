@@ -162,6 +162,12 @@ const TopHitsExplorer: React.FC<TopHitsExplorerProps> = ({ jobId, availableTarge
             ) : (
                  <div className="overflow-x-auto"><table className="min-w-full divide-y divide-gray-200"><thead className="bg-gray-50"><tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identity</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LCA</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ORF Sequence</th></tr></thead><tbody className="bg-white divide-y divide-gray-200">{currentHits.map(([identity, lca, orf], index) => (<tr key={index}><td className="px-6 py-4 whitespace-nowrap font-medium text-gray-800">{index + 1}</td><td className="px-6 py-4 whitespace-nowrap text-gray-600">{identity.toFixed(1)}%</td><td className="px-6 py-4 whitespace-nowrap text-gray-600">{lca}</td><td className="px-6 py-4 font-mono text-sm text-gray-700 max-w-xs overflow-x-auto whitespace-nowrap">{orf}</td></tr>))}</tbody></table></div>
             )}
+
+            <div className="mt-4 text-sm text-gray-500">
+                <p>This table shows the highest-ranking open reading frames (ORFs) from your input, sorted by their alignment 
+                identity score against the selected target protein. Note that <b>LCA</b> refers to <b>Longest Continuous Alignment</b>, or
+                the maximum window of overlap in the alignment readout.</p>
+            </div>
         </div>
     );
 };
