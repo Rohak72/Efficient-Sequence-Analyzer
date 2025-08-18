@@ -183,19 +183,19 @@ const TopHitsExplorer: React.FC<TopHitsExplorerProps> = ({ jobId, availableTarge
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source Sequence</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identity</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LCA</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ORF</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source Sequence</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source ORF</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {currentHits.map(([identity, lca, orf, originSeq], index) => (
                                 <tr key={index}>
                                     <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-800">{index + 1}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-gray-600 font-medium truncate max-w-xs" title={originSeq}>{originSeq}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-gray-600">{identity.toFixed(1)}%</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-gray-600">{lca}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-gray-600 font-medium truncate max-w-xs" title={originSeq}>{originSeq}</td>
                                     <td className="px-6 py-4 font-mono text-sm text-gray-700 max-w-xs overflow-x-auto whitespace-nowrap">{orf}</td>
                                 </tr>))}
                         </tbody>
