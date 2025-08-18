@@ -178,7 +178,29 @@ const TopHitsExplorer: React.FC<TopHitsExplorerProps> = ({ jobId, availableTarge
             {isLoadingHits ? (
                 <div className="flex justify-center items-center h-64"><Loader2 className="animate-spin text-teal-600" size={32}/></div>
             ) : (
-                 <div className="overflow-x-auto"><table className="min-w-full divide-y divide-gray-200"><thead className="bg-gray-50"><tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identity</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LCA</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ORF Sequence</th></tr></thead><tbody className="bg-white divide-y divide-gray-200">{currentHits.map(([identity, lca, orf], index) => (<tr key={index}><td className="px-6 py-4 whitespace-nowrap font-medium text-gray-800">{index + 1}</td><td className="px-6 py-4 whitespace-nowrap text-gray-600">{identity.toFixed(1)}%</td><td className="px-6 py-4 whitespace-nowrap text-gray-600">{lca}</td><td className="px-6 py-4 font-mono text-sm text-gray-700 max-w-xs overflow-x-auto whitespace-nowrap">{orf}</td></tr>))}</tbody></table></div>
+                 <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source Sequence</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identity</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LCA</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ORF</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {currentHits.map(([identity, lca, orf, originSeq], index) => (
+                                <tr key={index}>
+                                    <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-800">{index + 1}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-gray-600 font-medium truncate max-w-xs" title={originSeq}>{originSeq}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-gray-600">{identity.toFixed(1)}%</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-gray-600">{lca}</td>
+                                    <td className="px-6 py-4 font-mono text-sm text-gray-700 max-w-xs overflow-x-auto whitespace-nowrap">{orf}</td>
+                                </tr>))}
+                        </tbody>
+                    </table>
+                </div>
             )}
 
             <div className="mt-4 text-sm text-gray-500">
