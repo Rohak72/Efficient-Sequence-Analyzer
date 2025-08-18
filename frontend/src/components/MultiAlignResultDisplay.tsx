@@ -49,14 +49,14 @@ const AlignmentMetricsCard: React.FC<{ result: AlignmentResult }> = ({ result })
           <div className="p-4 bg-sky-50 rounded-lg"><p className="text-sm font-semibold text-sky-700">Most Likely ORF</p><div className="overflow-hidden pt-1"><p className="text-lg font-mono text-sky-600 whitespace-nowrap overflow-x-auto pb-2" title={result.top_orf}>{result.top_orf || 'N/A'}</p></div></div>
         </div>
       </div>
-    
+
       {/* --- ADDED: The exact toggle and readout sections from your example --- */}
       {/* --- TOGGLE FOR ALIGNMENT READOUT --- */}
       {alignment && (
         <div className="border-t border-gray-200 px-6 py-3 bg-gray-50 hover:bg-gray-100 transition-colors">
             <button
             onClick={() => setIsAlignmentVisible(!isAlignmentVisible)}
-            className="flex items-center justify-between w-full text-left font-semibold text-gray-700 "
+            className="flex items-center justify-between w-full text-left font-semibold text-gray-700"
             >
             <span>{isAlignmentVisible ? 'Hide' : 'Show'} Alignment Readout</span>
             {isAlignmentVisible ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
@@ -84,15 +84,15 @@ const ExportCard: React.FC<ExportCardProps> = ({ isAuthenticated, links }) => {
     return (
       <div className="bg-white rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.08)] p-6">
         <div className="flex items-center gap-x-3 mb-4">
-          <Download size={28} className="text-emerald-600" />
+          <Download size={28} />
           <h3 className="text-2xl font-bold text-gray-800">Export Full Results</h3>
         </div>
         <p className="text-gray-600 mb-5">Download the detailed ORF mappings and top alignment hits for the entire batch.</p>
         <div className="flex flex-col sm:flex-row gap-4">
-          <a href={links.orf_mappings} download className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-emerald-500 rounded-lg shadow-sm hover:bg-emerald-600 transition">
+          <a href={links.orf_mappings} download className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-emerald-500 rounded-lg shadow-sm hover:bg-emerald-600 hover:!text-white transition">
             <FileText size={16} /> Download ORF Mappings (.csv)
           </a>
-          <a href={links.top_hits} download className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-sky-500 rounded-lg shadow-sm hover:bg-sky-600 transition">
+          <a href={links.top_hits} download className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white hover:!text-white bg-sky-500 rounded-lg shadow-sm hover:bg-sky-600 transition">
             <FileText size={16} /> Download Top Hits (.csv)
           </a>
         </div>
@@ -167,7 +167,7 @@ const TopHitsExplorer: React.FC<TopHitsExplorerProps> = ({ jobId, availableTarge
     return (
         <div className="bg-white rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.08)] p-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-                <div className="flex items-center gap-x-3"><Search size={28} className="text-teal-600" /><h3 className="text-2xl font-bold text-gray-800">Top Hits Explorer</h3></div>
+                <div className="flex items-center gap-x-3"><Search size={28} /><h3 className="text-2xl font-bold text-gray-800">Top Hits Explorer</h3></div>
                 <div className="relative w-full sm:w-64">
                     <select value={selectedTarget} onChange={e => setSelectedTarget(e.target.value)} className="w-full pl-3 pr-10 py-2 text-md font-semibold text-gray-800 bg-gray-50 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 appearance-none">
                         {availableTargets.map(name => <option key={name} value={name}>{name}</option>)}

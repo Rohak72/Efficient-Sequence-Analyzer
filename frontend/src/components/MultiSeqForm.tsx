@@ -14,7 +14,6 @@ export const MultiSeqForm: React.FC = () => {
     const [apiError, setApiError] = useState<string | null>(null);
     
     // States for API responses
-    const [_frameResponse, setFrameResponse] = useState<any | null>(null);
     const [alignResponse, setAlignResponse] = useState<any | null>(null);
 
     const { token, fetchWithAuth } = useAuth();
@@ -31,17 +30,38 @@ export const MultiSeqForm: React.FC = () => {
         setLoading(true);
         setApiError(null);
         setAlignResponse(null); // We only need one response state now
-        setFrameResponse(null); // This state is no longer used here
 
         try {
-            // *** CHANGED: Create a single FormData object ***
-            const formData = new FormData();
-            // The backend expects the raw File object, not a ServerFile object
-            if (!('name' in inputFile) || !('name' in targetFile)) {
-                throw new Error("Cannot process a saved file directly. Please re-upload for now.");
+            const getFileObject = async (file: File | ServerFile): Promise<File> => {
+                // If it's already a File object (from a direct upload), we're good.
+                if ('name' in file) {
+                    return file;
+                }
+
+                console.log(`Fetching content for ${file.filename}...`);
+
+                // *** Corrected Endpoint: We now use the /read endpoint ***
+                const response = await fetchWithAuth(`http://localhost:8000/files/${file.id}/read`);
+                if (!response.ok) {
+                    throw new Error(`Failed to read existing file: ${file.filename}`);
+                }
+
+                // *** The response is JSON, so we call .json() ***
+                const data = await response.json();
+                
+                // *** Extract the actual file content from the 'content' property ***
+                const fileContent = data.content;
+
+                // *** Create the new File object from the string content ***
+                return new File([fileContent], file.filename, { type: 'text/plain' });
             }
-            formData.append('input_fasta', inputFile as File);
-            formData.append('target_fasta', targetFile as File);
+
+            const importedInputFile = await getFileObject(inputFile)
+            const importedTargetFile = await getFileObject(targetFile)
+
+            const formData = new FormData();
+            formData.append('input_fasta', importedInputFile as File);
+            formData.append('target_fasta', importedTargetFile as File);
             formData.append('direction', direction);
 
             // *** CHANGED: Use the correct fetcher (authenticated or not) ***

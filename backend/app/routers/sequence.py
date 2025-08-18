@@ -133,11 +133,16 @@ def process_multi_alignment(
     }
     
     if current_user:
-        # Save artifacts and add download links to the response
-        results_key, top_hits_key = save_alignment_artifacts(results_df, top_hits, ...)
+        results_key, top_hits_key = save_alignment_artifacts(results_df=results_df, top_hits=top_hits,
+                                                             current_user=current_user, s3_client=s3_client,
+                                                             bucket_name=bucket_name, db=db)
+
+        presigned_result_url = generate_presigned_url(results_key, filename="orf_mappings.csv")
+        presigned_hits_url = generate_presigned_url(top_hits_key, filename="top_hits.csv")
+
         response['download_links'] = {
-            'orf_mappings': generate_presigned_url(results_key, ...),
-            'top_hits': generate_presigned_url(top_hits_key, ...)
+            'orf_mappings': presigned_result_url,
+            'top_hits': presigned_hits_url
         }
         
     return response
