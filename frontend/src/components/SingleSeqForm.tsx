@@ -215,7 +215,7 @@ export const SingleSeqForm: React.FC = () => {
                 type="submit"
                 disabled={loading}
                 className={`group relative inline-flex h-12 w-32 items-center justify-center overflow-hidden rounded-md border 
-                  border-neutral-200 px-6 font-medium transition-all duration-300 disabled:cursor-not-allowed
+                  border-neutral-200 px-6 font-medium transition-all duration-300 disabled:cursor-not-allowed cursor-pointer
                 ${loading ? 'min-w-32 bg-pink-500' : 'bg-white'}`}
               >
                 {loading ? (

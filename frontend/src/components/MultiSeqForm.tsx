@@ -129,8 +129,8 @@ export const MultiSeqForm: React.FC = () => {
                             type="submit"
                             disabled={loading}
                             className={`group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-md border 
-                            border-neutral-200 font-medium transition-all duration-300 disabled:cursor-not-allowed
-                            ${loading ? 'min-w-32 bg-pink-500' : 'bg-white'}`}
+                            border-neutral-200 font-medium transition-all duration-300 disabled:cursor-not-allowed cursor-pointer
+                            ${loading ? 'min-w-32 bg-violet-500' : 'bg-white'}`}
                         >
                             {loading ? (
                             // --- LOADING STATE ---
@@ -151,7 +151,7 @@ export const MultiSeqForm: React.FC = () => {
                                 </div>
                                 <div className="absolute inline-flex h-12 w-full translate-y-[100%] items-center justify-center text-white 
                                 text-lg transition duration-500 group-hover:translate-y-0">
-                                <span className="absolute h-full w-full translate-y-full skew-y-12 scale-y-0 bg-pink-500 transition 
+                                <span className="absolute h-full w-full translate-y-full skew-y-12 scale-y-0 bg-violet-500 transition 
                                 duration-500 group-hover:translate-y-0 group-hover:scale-150"></span>
                                 <Send className="z-10 mr-2" size={18}/>
                                 <span className="z-10">Submit</span>
