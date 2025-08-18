@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { z } from 'zod';
-import { Send, SquarePenIcon } from 'lucide-react';
+import { Send, SquarePenIcon, Loader2 } from 'lucide-react';
 import { FrameResultDisplay } from './FrameResultDisplay';
 import { AlignResultDisplay } from './AlignResultDisplay'
 import { useAuth } from '../contexts/AuthContext';
@@ -211,22 +211,40 @@ export const SingleSeqForm: React.FC = () => {
           </fieldset>
           
           <div className="flex justify-center">
-            {/* Submit Button */}
-            <button type="submit" disabled={loading} className="group relative inline-flex h-12 items-center justify-center 
-            overflow-hidden rounded-md border border-neutral-200 bg-white font-medium cursor-pointer">
-              <div className="inline-flex h-12 translate-y-0 items-center justify-center px-6 text-black text-md transition 
-              duration-500 group-hover:-translate-y-[150%]">
-                <Send className="mr-2" size={18}/>
-                <span>Submit</span>
-              </div>
-              <div className="absolute inline-flex h-12 w-full translate-y-[100%] items-center justify-center text-white text-lg 
-              transition duration-500 group-hover:translate-y-0">
-                <span className="absolute h-full w-full translate-y-full skew-y-12 scale-y-0 bg-pink-500 transition duration-500 
-                group-hover:translate-y-0 group-hover:scale-150"></span>
-                <Send className="z-10 mr-2" size={18}/>
-                <span className="z-10">Submit</span>
-              </div>
-            </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className={`group relative inline-flex h-12 w-32 items-center justify-center overflow-hidden rounded-md border 
+                  border-neutral-200 px-6 font-medium transition-all duration-300 disabled:cursor-not-allowed
+                ${loading ? 'min-w-32 bg-pink-500' : 'bg-white'}`}
+              >
+                {loading ? (
+                  // --- LOADING STATE ---
+                  // This is shown ONLY when loading is true.
+                  // It has a pink background, white text, and a spinner.
+                  <div className="flex items-center justify-center text-white">
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    <span>Loading...</span>
+                  </div>
+                ) : (
+                  // --- NORMAL STATE ---
+                  // This is your exact animation code, shown when loading is false.
+                  <>
+                    <div className="inline-flex h-12 translate-y-0 items-center justify-center px-6 text-black text-md transition 
+                    duration-500 group-hover:-translate-y-[150%]">
+                      <Send className="mr-2" size={18}/>
+                      <span>Submit</span>
+                    </div>
+                    <div className="absolute inline-flex h-12 w-full translate-y-[100%] items-center justify-center text-white 
+                    text-lg transition duration-500 group-hover:translate-y-0">
+                      <span className="absolute h-full w-full translate-y-full skew-y-12 scale-y-0 bg-pink-500 transition 
+                      duration-500 group-hover:translate-y-0 group-hover:scale-150"></span>
+                      <Send className="z-10 mr-2" size={18}/>
+                      <span className="z-10">Submit</span>
+                    </div>
+                  </>
+                )}
+              </button>
           </div>
         </form>
 

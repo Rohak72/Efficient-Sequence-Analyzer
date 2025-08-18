@@ -140,7 +140,7 @@ export const AlignResultDisplay: React.FC<AlignResultProps> = ({ data, isAuthent
             </div>
             <p className="text-amber-700 mt-2">
                 Create an account or sign in to download your results. This will allow you to save your work for future 
-                analysis and share it with others.
+                analysis.
             </p>
         </div>
       )}
