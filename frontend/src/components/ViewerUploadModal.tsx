@@ -55,55 +55,65 @@ export const FileUploader: React.FC<FileUploaderProps> = ({ fileType, selectedFi
     <div>
       <label className="block text-lg font-semibold text-gray-700 mb-3">{label}</label>
       {!selectedFile ? (
-        // --- UPLOAD PROMPT ---
-        <label
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          className="relative flex flex-col items-center justify-center w-full h-32 p-4 text-center bg-gray-50 border-2 
-          border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-indigo-50 hover:border-indigo-400 transition-colors"
-        >
-          <UploadCloud size={32} className="text-gray-400 mb-2"/>
-          <p className="font-semibold text-gray-600">
-            {isAuthenticated ? (
-                <span onClick={() => setIsModalOpen(true)} className="text-indigo-600 hover:underline">Select an existing file</span>
-            ) : (
-                <span className="text-indigo-600">Click to upload</span>
-            )}
-            {' or drag & drop'}
-          </p>
-          <p className="text-xs text-gray-500">FASTA format (.fa, .fasta)</p>
-          {!isAuthenticated && (
-            <input type="file" onChange={handleFileSelect} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" accept=".fasta,.fa,.fna" />
-          )}
-        </label>
-      ) : (
-        // --- FILE SELECTED VIEW ---
-        <div className="flex items-center justify-between w-full h-32 p-4 bg-emerald-50 border-2 border-emerald-200 rounded-lg">
-            <div className="flex items-center gap-3 overflow-hidden">
-                <FileIcon size={32} className="text-emerald-600 flex-shrink-0" />
-                <p className="font-medium text-gray-800 truncate" title={getFileName(selectedFile)}>
-                    {getFileName(selectedFile)}
-                </p>
+        // This container now handles the conditional rendering
+        <div className="relative w-full h-32">
+          {isAuthenticated ? (
+            // --- LOGGED-IN VIEW: The entire div is a button that opens the modal ---
+            <div
+              onClick={() => setIsModalOpen(true)} // <-- The click handler is on the main container
+              onDragOver={(e: React.DragEvent<HTMLDivElement>) => e.preventDefault()}
+              onDrop={(e: React.DragEvent<HTMLDivElement>) => { /* Adjusted for div */
+                  e.preventDefault();
+                  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                      onFileChange(e.dataTransfer.files[0]);
+                  }
+              }}
+              className="flex flex-col items-center justify-center w-full h-full p-4 text-center bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-indigo-50 hover:border-indigo-400 transition-colors"
+            >
+              <UploadCloud size={32} className="text-gray-400 mb-2"/>
+              <p className="font-semibold text-gray-600">
+                {/* The span is now just for styling, not for clicks */}
+                <span className="text-indigo-600">Select an existing file</span>
+                {' or drag & drop'}
+              </p>
+              <p className="text-xs text-gray-500">FASTA format (.fa, .fasta)</p>
             </div>
-            <button onClick={() => onFileChange(null)} className="p-1.5 text-gray-500 hover:text-red-600 rounded-full hover:bg-red-100 transition-colors">
-                <X size={20} />
-            </button>
+          ) : (
+            // --- GUEST VIEW: Unchanged, still works perfectly ---
+            <label
+              onDragOver={handleDragOver}
+              onDrop={(e: React.DragEvent<HTMLLabelElement>) => handleDrop(e)} // Ensure correct event type
+              className="flex flex-col items-center justify-center w-full h-full p-4 text-center bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-indigo-50 hover:border-indigo-400 transition-colors"
+            >
+              <UploadCloud size={32} className="text-gray-400 mb-2"/>
+              <p className="font-semibold text-gray-600">
+                <span className="text-indigo-600">Click to upload</span>
+                {' or drag & drop'}
+              </p>
+              <p className="text-xs text-gray-500">FASTA format (.fa, .fasta)</p>
+              <input type="file" onChange={handleFileSelect} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" accept=".fasta,.fa,.fna" />
+            </label>
+          )}
+        </div>
+      ) : (
+        // --- FILE SELECTED VIEW (Unchanged) ---
+        <div className="flex items-center justify-between w-full h-32 p-4 bg-emerald-50 border-2 border-emerald-200 rounded-lg">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <FileIcon size={32} className="text-emerald-600 flex-shrink-0" />
+            <p className="font-medium text-gray-800 truncate" title={getFileName(selectedFile)}>{getFileName(selectedFile)}</p>
+          </div>
+          <button onClick={() => onFileChange(null)} className="p-1.5 text-gray-500 hover:text-red-600 rounded-full hover:bg-red-100 transition-colors"><X size={20} /></button>
         </div>
       )}
       
+      {/* Modal logic remains unchanged */}
       {isAuthenticated && (
         <FileSelectionModal 
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             fileType={fileType}
-            onFileSelect={(file) => {
-                onFileChange(file);
-                setIsModalOpen(false);
-            }}
-            onNewFileUpload={(file) => {
-                onFileChange(file);
-                setIsModalOpen(false);
-            }}
+            onFileSelect={(file) => { onFileChange(file); setIsModalOpen(false); }}
+            onNewFileUpload={(file) => { onFileChange(file); setIsModalOpen(false); }}
         />
       )}
     </div>
