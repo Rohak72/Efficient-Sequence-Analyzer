@@ -20,7 +20,8 @@ def batch_alignment_cycle(direction: str, record_id: str, orf_set: List[str], ta
                           top_hits: Dict[str, List], curr_results_data: pd.DataFrame, align_threshold: float):
     max_lca, final_align_res, top_orf = 0, None, None
     for orf in orf_set:
-        align_res = align(query=orf, target_set=target_set, top_hits=top_hits, identity_ratio=align_threshold)
+        align_res = align(query=orf, origin_seq=record_id, target_set=target_set, 
+                          top_hits=top_hits, identity_ratio=align_threshold)
         if align_res.get('length') > max_lca:
                 max_lca = align_res.get('length')
                 final_align_res = align_res
@@ -32,7 +33,7 @@ def batch_alignment_cycle(direction: str, record_id: str, orf_set: List[str], ta
 
     return results_df, final_align_res
 
-def align(query: str, target_set: dict, top_hits: dict, identity_ratio: float):
+def align(query: str, origin_seq: str, target_set: dict, top_hits: dict, identity_ratio: float):
     aligner = create_aligner()
     alignment_metadata = {'start': None, 'end': None, 'length': 0, 'target': None, 
                           'alignment': None, 'identity_pct': 0}
@@ -100,10 +101,11 @@ def align(query: str, target_set: dict, top_hits: dict, identity_ratio: float):
         # min element (at index 0). Being that this is a min-heap, we only spend O(logn) time on the
         # insertion/search step as opposed to the O(n) limitation of a standard list.
         heap = top_hits[target_id.replace('\u200b', '')]
+        new_heap_entry = (identity_pct, best_chunk_lca, query, origin_seq)
         if len(heap) < 5:
-            heapq.heappush(heap, (identity_pct, best_chunk_lca, query)) # Populate heap if still vacant.
+            heapq.heappush(heap, new_heap_entry) # Populate heap if still vacant.
         elif identity_pct > heap[0][0]:
-            heapq.heappushpop(heap, (identity_pct, best_chunk_lca, query)) # Replace if needed.
+            heapq.heappushpop(heap, new_heap_entry) # Replace if needed.
     
     # Return the final alignment result and target match for the input ORF.
     return alignment_metadata

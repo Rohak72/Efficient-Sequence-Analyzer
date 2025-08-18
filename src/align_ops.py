@@ -14,7 +14,7 @@ from Bio import Align
 from Bio.Align import substitution_matrices
 import heapq
 
-def align(query: str, target_set: dict, top_hits: dict, identity_ratio: float):
+def align(query: str, origin_seq: str, target_set: dict, top_hits: dict, identity_ratio: float):
     aligner = create_aligner()
     alignment_metadata = {'start': None, 'end': None, 'length': 0, 'target': None, 
                           'alignment': None, 'identity_pct': 0}
@@ -82,10 +82,11 @@ def align(query: str, target_set: dict, top_hits: dict, identity_ratio: float):
         # min element (at index 0). Being that this is a min-heap, we only spend O(logn) time on the
         # insertion/search step as opposed to the O(n) limitation of a standard list.
         heap = top_hits[target_id.replace('\u200b', '')]
+        new_heap_entry = (identity_pct, best_chunk_lca, query, origin_seq)
         if len(heap) < 5:
-            heapq.heappush(heap, (identity_pct, best_chunk_lca, query)) # Populate heap if still vacant.
+            heapq.heappush(heap, new_heap_entry) # Populate heap if still vacant.
         elif identity_pct > heap[0][0]:
-            heapq.heappushpop(heap, (identity_pct, best_chunk_lca, query)) # Replace if needed.
+            heapq.heappushpop(heap, new_heap_entry) # Replace if needed.
     
     # Return the final alignment result and target match for the input ORF.
     return alignment_metadata

@@ -85,7 +85,8 @@ for record_id, record_seq in in_records.items():
         max_lca, final_align_res, top_orf = 0, None, None
 
         for orf in all_orfs:
-            align_res = align(query=orf, target_set=tgt_records, top_hits=top_hits, identity_ratio=0.98)
+            align_res = align(query=orf, origin_seq=record_id, target_set=tgt_records, 
+                              top_hits=top_hits, identity_ratio=0.98)
             # print(align_res["alignment"]) -> Intermediate Debugging Output
 
             # If this ORF result yields a longer continuous overlap than we've seen before, update metadata

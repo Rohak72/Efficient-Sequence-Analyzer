@@ -56,12 +56,13 @@ def build_target_map(target_orf_hits: dict):
     rows = []
     for target, hits in target_orf_hits.items():
         hits = sorted(hits, key=lambda x: x[0], reverse=True)
-        for identity, lca, orf in hits:
+        for identity, lca, source_orf, source_seq in hits:
             rows.append({
                 "Target": target,
                 "Identity-Score": identity,
                 "LCA": lca,
-                "Source-ORF": orf
+                "Source-Seq": source_seq,
+                "Source-ORF": source_orf
             })
 
     df = pd.DataFrame(rows)
