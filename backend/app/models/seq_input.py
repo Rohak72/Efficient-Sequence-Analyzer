@@ -1,4 +1,4 @@
-from pydantic import BaseModel, PositiveFloat, StrictStr, field_validator
+from pydantic import BaseModel, PositiveFloat, StrictStr, validator
 from typing import Literal, Optional, Dict, List
 
 def nucleotide_check(dna_entry: StrictStr) -> str:
@@ -16,7 +16,7 @@ class FrameRequestSingle(BaseModel):
     sequence: StrictStr
     direction: Literal["FWD", "REV", "BOTH"] = "BOTH"
 
-    @field_validator('sequence', mode='after')
+    @validator('sequence', pre=False, always=True)
     @classmethod
     def check_sequence(cls, v): return nucleotide_check(v)
 
@@ -24,7 +24,7 @@ class FrameRequestMulti(BaseModel):
     sequences: Dict[str, StrictStr]
     direction: Literal["FWD", "REV", "BOTH"] = "BOTH"
 
-    @field_validator('sequences', mode='after')
+    @validator('sequences', pre=False, always=True)
     @classmethod
     def check_sequences(cls, v: Dict[str, str]): return {k: nucleotide_check(val) for k, val in v.items()}
 
