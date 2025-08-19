@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { FrameResultDisplay } from './FrameResultDisplay';
 import { useAuth } from '../contexts/AuthContext';
-import { BarChart2, ChevronUp, ChevronDown, Download, FileText, UserCheck, AlertCircle, Search, Loader2 } from 'lucide-react';
+import { BarChart2, ChevronUp, ChevronDown, Download, FileText, UserCheck, AlertCircle, SearchCheck, Loader2 } from 'lucide-react';
 
 // --- TYPE DEFINITIONS ---
 interface AlignmentResult {
@@ -167,7 +167,7 @@ const TopHitsExplorer: React.FC<TopHitsExplorerProps> = ({ jobId, availableTarge
     return (
         <div className="bg-white rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.08)] p-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-                <div className="flex items-center gap-x-3"><Search size={28} /><h3 className="text-2xl font-bold text-gray-800">Top Hits Explorer</h3></div>
+                <div className="flex items-center gap-x-3"><SearchCheck size={28} /><h3 className="text-2xl font-bold text-gray-800">Top Hits Explorer</h3></div>
                 <div className="relative w-full sm:w-64">
                     <select value={selectedTarget} onChange={e => setSelectedTarget(e.target.value)} className="w-full pl-3 pr-10 py-2 text-md font-semibold text-gray-800 bg-gray-50 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 appearance-none">
                         {availableTargets.map(name => <option key={name} value={name}>{name}</option>)}
