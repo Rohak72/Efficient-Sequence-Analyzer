@@ -186,6 +186,8 @@ export const FastaEditor: React.FC = () => {
       setNewFilename('');
       navigate('/editor');
 
+      window.location.reload()
+
     } catch (error: any) {
       console.error("Error creating file:", error);
       alert(`Error: ${error.message}`);
