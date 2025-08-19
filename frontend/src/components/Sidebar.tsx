@@ -176,6 +176,8 @@ export const Sidebar: React.FC = () => {
         throw new Error("Failed to delete file.");
       }
 
+      navigate('/editor')
+
       // On success, update the UI instantly without a page reload
       // This is the "magic" of React state updates
       setInputFiles(currentFiles => currentFiles.filter(file => file.id !== fileId));
