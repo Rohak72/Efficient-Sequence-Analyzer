@@ -44,7 +44,7 @@ plugins:
 
 custom:
   pythonRequirements:
-    dockerizePip: true
+    zip: true
 
 package:
   patterns:
