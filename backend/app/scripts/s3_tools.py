@@ -6,7 +6,7 @@ load_dotenv()
 
 aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
 aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-bucket_name = os.getenv("S3_BUCKET_NAME")
+bucket_name = os.getenv("FASTA_S3_BUCKET_NAME")
 
 # Expose this to be used everywhere
 s3_client = boto3.client(

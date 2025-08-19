@@ -1,9 +1,10 @@
 from fastapi import FastAPI
+from mangum import Mangum
+
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers.sequence import router as sequence_router
 from app.routers.auth import router as auth_router
 from app.routers.files import router as files_router
-from app import models
 from app.database import engine, Base
 
 Base.metadata.create_all(bind=engine)
@@ -26,3 +27,5 @@ app.add_middleware(
 @app.get("/")
 async def read_root():
     return "Server is running."
+
+handler = Mangum(app)
