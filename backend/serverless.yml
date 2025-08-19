@@ -1,0 +1,51 @@
+# backend/serverless.yml
+
+# This is the name for your group of services on the Serverless Dashboard
+service: simpliseq
+
+# We're using the latest version of the Serverless Framework
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.12
+  region: us-east-2
+
+  # --- Environment Variables ---
+  environment:
+    DB_S3_BUCKET_NAME: "persistent-seq-db" # SQLite DB storage S3 bucket.
+    FASTA_S3_BUCKET_NAME: "fasta-file-storage" # FASTA file storage S3 bucket.
+
+  # --- Permissions (gives Lambda the 'Execution Role' to talk to other AWS services) ---
+  iam:
+    role:
+      statements:
+        # Grants read/write operations on the S3 database file.
+        - Effect: "Allow"
+          Action:
+            - "s3:GetObject"
+            - "s3:PutObject"
+          Resource: "arn:aws:s3:::persistent-seq-db/database/storage.db"
+
+        # Full permission for all user-related files in the FASTA bucket.
+        - Effect: "Allow"
+          Action: "s3:*"
+          Resource: "arn:aws:s3:::fasta-file-storage/*"
+
+functions:
+  api:
+    handler: lambda_handler.handler # Point to the handler object inside lambda_handler.py.
+    events:
+      - httpApi: '*' # Enable API Gateway functionality.
+    timeout: 30 # Allow function a more generous time block for longer align operations.
+  
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+
+package:
+  patterns:
+    - '!.venv/**' # Tell Serverless to bypass uploading the large .venv folder.
