@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import ReactQuill from 'react-quill-new';
-import { MaximizeIcon, MinimizeIcon, SaveIcon } from 'lucide-react';
+import { MaximizeIcon, MinimizeIcon, SaveIcon, X } from 'lucide-react';
 
 import 'react-quill-new/dist/quill.snow.css';
 import '../styles/FastaEditor.css'; // The updated CSS is crucial
@@ -22,7 +22,7 @@ const quillConfig = {
 const quillFormats = [ 'header', 'bold', 'italic', 'underline', 'strike', 'list', 'bullet', 'link' ];
 
 // --- Helper function to convert Quill's HTML to plain FASTA text ---
-const convertHtmlToFasta = (html: string): string => {
+const convertHTMLToFASTA = (html: string): string => {
   // Use a temporary DOM element to correctly parse HTML and extract text
   // This handles HTML entities (like >) and structure correctly.
   const tempDiv = document.createElement('div');
@@ -43,10 +43,14 @@ export const FastaEditor: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [newFilename, setNewFilename] = useState('');
+  const [fileType, setFileType] = useState<'input' | 'reference'>('input');
 
   const navigate = useNavigate();
 
   const { fileId } = useParams();
+  const isNewFile = !fileId || fileId === 'new';
   const { token, fetchWithAuth } = useAuth();
 
   const toggleFullscreen = () => setIsFullscreen(!isFullscreen);
@@ -125,38 +129,65 @@ export const FastaEditor: React.FC = () => {
   };
 
   const handleSaveClick = async () => {
-    if (!hasUnsavedChanges) return;
+    if (!isNewFile) {
+      if (!hasUnsavedChanges || !token) return;
+      
+      setIsSaving(true);
+      const plainTextContent = convertHTMLToFASTA(content);
+      try {
+        const response = await fetchWithAuth(`http://localhost:8000/files/${fileId}/edit`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: plainTextContent }),
+        });
+        if (!response.ok) throw new Error("Failed to save changes.");
+        alert("File saved successfully!");
+        setHasUnsavedChanges(false);
+      } catch (error: any) {
+        alert(`Error: ${error.message}`);
+      } finally {
+        setIsSaving(false);
+      }
+    } else {
+      // If it's a new file, open the modal to get a filename and type.
+      setIsSaveModalOpen(true);
+    }
+  };
 
-    if (!fileId || fileId === 'new' || !token) {
-      alert("Cannot save. You must be editing an existing file.");
+  const handleCreateNewFile = async () => {
+    if (!newFilename) {
+      alert("Please enter a filename.");
       return;
     }
-
+    
     setIsSaving(true);
     
-    // Convert the editor's HTML back to plain text for the backend
-    const plainTextContent = convertHtmlToFasta(content);
+    const plainTextContent = convertHTMLToFASTA(content);
+    const blob = new Blob([plainTextContent], { type: 'text/plain' });
+    const fileToUpload = new File([blob], `${newFilename}.fasta`, { type: 'text/plain' });
+
+    const formData = new FormData();
+    formData.append('file', fileToUpload);
+    formData.append('type', fileType);
 
     try {
-      const response = await fetch(`http://localhost:8000/files/${fileId}/edit`, { // Matches backend PUT endpoint
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json', // We are sending JSON
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ content: plainTextContent }), // The body must match the Pydantic model
+      const response = await fetchWithAuth('http://localhost:8000/files/upload', {
+        method: 'POST',
+        body: formData,
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to save the file.");
+        throw new Error(errorData.detail || "Failed to create the file.");
       }
-      
-      alert("File saved successfully!");
-      setHasUnsavedChanges(false)
+
+      alert("File created successfully!");
+      setIsSaveModalOpen(false);
+      setNewFilename('');
+      navigate('/editor');
 
     } catch (error: any) {
-      console.error("Error saving file:", error);
+      console.error("Error creating file:", error);
       alert(`Error: ${error.message}`);
     } finally {
       setIsSaving(false);
@@ -213,7 +244,7 @@ export const FastaEditor: React.FC = () => {
 
             <button
               onClick={handleSaveClick}
-              disabled={!hasUnsavedChanges || isSaving || fileId === 'new' || isLoading}
+              disabled={isSaving || isLoading || (isNewFile ? convertHTMLToFASTA(content).length === 0 : !hasUnsavedChanges)}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg 
               hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 
               focus-visible:ring-offset-2 transition-colors disabled:bg-indigo-300 disabled:cursor-not-allowed
@@ -233,6 +264,59 @@ export const FastaEditor: React.FC = () => {
               )}
             </button>
         </footer>
+
+        {/* --- NEW: The 'Save As' Modal --- */}
+      {isSaveModalOpen && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold text-slate-800">Save New FASTA File</h2>
+              <button onClick={() => setIsSaveModalOpen(false)}><X className="text-slate-500 hover:text-slate-800"/></button>
+            </div>
+            
+            {/* Filename Input */}
+            <div>
+              <label htmlFor="filename" className="block text-sm font-medium text-slate-700 mb-1">Filename</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  id="filename"
+                  value={newFilename}
+                  onChange={(e) => setNewFilename(e.target.value)}
+                  placeholder="my-cool-sequence"
+                  className="w-full pl-3 pr-16 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+                />
+                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500">.fasta</span>
+              </div>
+            </div>
+
+            {/* File Type Radio Buttons */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">File Type</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" value="input" checked={fileType === 'input'} onChange={() => setFileType('input')} className="form-radio text-indigo-600"/>
+                  <span>Input File</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" value="reference" checked={fileType === 'reference'} onChange={() => setFileType('reference')} className="form-radio text-indigo-600"/>
+                  <span>Reference File</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 pt-4">
+              <button onClick={() => setIsSaveModalOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200">
+                Cancel
+              </button>
+              <button onClick={handleCreateNewFile} disabled={isSaving} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:bg-indigo-300">
+                {isSaving ? "Saving..." : "Save File"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       </div>
     </div>
