@@ -69,7 +69,7 @@ const DropdownSection: React.FC<DropdownSectionProps> = ({ title, icon, files, i
                   onFileDelete(file.id);
                 }}
                 className="ml-auto opacity-0 group-hover:opacity-100 p-1 rounded-full text-gray-400 hover:bg-red-100 
-                hover:text-red-600 transition-opacity"
+                hover:text-red-600 transition-opacity cursor-pointer"
                 aria-label={`Delete file ${file.filename}`}
               >
                   <Trash2 size={14}/>

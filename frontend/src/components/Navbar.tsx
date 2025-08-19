@@ -105,7 +105,7 @@ export const Navbar: React.FC = () => {
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center justify-center text-sm bg-violet-600 text-white rounded-full h-8 w-8 font-bold 
-                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer">
                   <span className="sr-only">Open user menu</span>
                   {/* Display the first letter of the username */}
                   {user?.username.charAt(0).toUpperCase()}
@@ -121,7 +121,7 @@ export const Navbar: React.FC = () => {
                       Settings
                     </Link>
                     <button onClick={handleLogout} className="w-full text-left block px-4 py-2 text-sm text-gray-700 
-                    hover:bg-gray-100">
+                    hover:bg-gray-100 hover:text-indigo-500 cursor-pointer">
                       Logout
                     </button>
                   </div>

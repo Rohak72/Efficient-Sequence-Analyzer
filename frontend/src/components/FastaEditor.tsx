@@ -273,7 +273,7 @@ export const FastaEditor: React.FC = () => {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-bold text-slate-800">Save New FASTA File</h2>
-              <button onClick={() => setIsSaveModalOpen(false)}><X className="text-slate-500 hover:text-slate-800"/></button>
+              <button onClick={() => setIsSaveModalOpen(false)}><X className="text-slate-500 hover:text-slate-800 cursor-pointer"/></button>
             </div>
             
             {/* Filename Input */}
@@ -309,10 +309,12 @@ export const FastaEditor: React.FC = () => {
 
             {/* Action Buttons */}
             <div className="flex justify-end gap-3 pt-4">
-              <button onClick={() => setIsSaveModalOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200">
+              <button onClick={() => setIsSaveModalOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-700 
+              bg-slate-100 rounded-lg hover:bg-slate-200 cursor-pointer">
                 Cancel
               </button>
-              <button onClick={handleCreateNewFile} disabled={isSaving} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:bg-indigo-300">
+              <button onClick={handleCreateNewFile} disabled={isSaving} className="px-4 py-2 text-sm font-medium text-white 
+              bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:bg-indigo-300 cursor-pointer">
                 {isSaving ? "Saving..." : "Save File"}
               </button>
             </div>
