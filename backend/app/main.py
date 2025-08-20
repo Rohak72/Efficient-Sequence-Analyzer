@@ -14,7 +14,10 @@ app.include_router(sequence_router)
 app.include_router(auth_router)
 app.include_router(files_router)
 
-origins = ["http://localhost:5173"]
+origins = [
+    "http://localhost:5173",
+    "https://simpliseq.vercel.app/"
+]
 
 app.add_middleware(
     CORSMiddleware,
