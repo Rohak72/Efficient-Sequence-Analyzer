@@ -34,12 +34,40 @@ provider:
         - Effect: "Allow"
           Action: "s3:*"
           Resource: "arn:aws:s3:::fasta-file-storage/*"
+  
+  # Encode the backbone for the universal API Gateway trigger with this httpApi section.
+  httpApi:
+    cors:
+      # Specify the exact origins to accept; note that these are both unslashed to limit inconsistency.
+      allowedOrigins:
+        - 'http://localhost:5173' # Development URL.
+        - 'https://simpliseq.vercel.app' # Live Production URL.
+      
+      # Denote the headers the browser is allowed to send to the backend.
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+        - X-Amz-Date
+        - X-Api-Key
+        - X-Amz-Security-Token
+        
+      # Allow each of the needed HTTP methods (GET, POST, PUT, DELETE, OPTIONS) for the browser.
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      
+      # Essential for sending authentication cookies or headers.
+      allowCredentials: true
 
 functions:
   api:
     handler: lambda_handler.handler # Point to the handler object inside lambda_handler.py.
-    url: true # Enable public URL and API Gateway functionality.
-    timeout: 30 # Allow function a more generous time block for longer align operations.
+    timeout: 29 # Allow function a more generous time block for longer align operations.
+    events:
+      - httpApi: '*' # Inherit global CORS config from the provider section above.
 
 plugins:
   - serverless-python-requirements # Define an explicit, reliable plugin config for package handling.

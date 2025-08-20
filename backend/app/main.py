@@ -16,7 +16,7 @@ app.include_router(files_router)
 
 origins = [
     "http://localhost:5173",
-    "https://simpliseq.vercel.app/"
+    "https://simpliseq.vercel.app"
 ]
 
 app.add_middleware(
