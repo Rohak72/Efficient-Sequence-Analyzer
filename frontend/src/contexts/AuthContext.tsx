@@ -77,7 +77,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     body.append('username', username);
     body.append('password', password);
     
-    await handleAuth("http://localhost:8000/auth/login", body, (data) => {
+    await handleAuth(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, body, (data) => {
         setToken(data.access_token);
         localStorage.setItem("token", data.access_token);
         setUser({ username }); // Set user from the login form
@@ -92,7 +92,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch("http://localhost:8000/auth/signup", {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: body,

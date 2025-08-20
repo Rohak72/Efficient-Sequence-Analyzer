@@ -138,7 +138,7 @@ const FileSelectionModal: React.FC<FileSelectionModalProps> = ({ isOpen, onClose
       setIsLoading(true);
       try {
         // Corrected: Fetch from the single endpoint that returns all files
-        const res = await fetchWithAuth(`http://localhost:8000/files/`);
+        const res = await fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/files/`);
         if (!res.ok) throw new Error('Failed to fetch files');
           // Fetch all files
           const allFiles: ServerFile[] = await res.json();

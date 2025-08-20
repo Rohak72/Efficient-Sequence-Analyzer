@@ -41,7 +41,7 @@ export const MultiSeqForm: React.FC = () => {
                 console.log(`Fetching content for ${file.filename}...`);
 
                 // *** Corrected Endpoint: We now use the /read endpoint ***
-                const response = await fetchWithAuth(`http://localhost:8000/files/${file.id}/read`);
+                const response = await fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/files/${file.id}/read`);
                 if (!response.ok) {
                     throw new Error(`Failed to read existing file: ${file.filename}`);
                 }
@@ -68,7 +68,7 @@ export const MultiSeqForm: React.FC = () => {
             const fetcher = isAuthenticated ? fetchWithAuth : fetch;
 
             // *** CHANGED: Make ONE single, efficient API call to the new endpoint ***
-            const alignRes = await fetcher('http://localhost:8000/process/multi', {
+            const alignRes = await fetcher(`${import.meta.env.VITE_API_BASE_URL}/process/multi`, {
                 method: 'POST',
                 body: formData, // The browser sets the correct headers for FormData
             });

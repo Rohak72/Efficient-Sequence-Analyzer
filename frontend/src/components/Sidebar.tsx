@@ -106,7 +106,7 @@ export const Sidebar: React.FC = () => {
   const fetchFiles = async () => {
     setIsLoading(true);
     try {
-      const response = await fetchWithAuth("http://localhost:8000/files/");
+      const response = await fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/files/`);
 
       if (!response.ok) {
         throw new Error("Could not retrieve file list.");
@@ -169,7 +169,7 @@ export const Sidebar: React.FC = () => {
     }
 
     try {
-      const response = await fetchWithAuth(`http://localhost:8000/files/${fileId}`, {method: 'DELETE'});
+      const response = await fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/files/${fileId}`, {method: 'DELETE'});
 
       if (!response.ok) {
         // If the server returns an error message, show it
@@ -217,7 +217,7 @@ export const Sidebar: React.FC = () => {
     console.log()
 
     try {
-        const response = await fetch("http://localhost:8000/files/upload", {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/files/upload`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,

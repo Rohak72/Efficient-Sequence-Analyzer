@@ -77,7 +77,7 @@ export const SingleSeqForm: React.FC = () => {
     }
 
     try {
-      const frameRes = await fetch('http://localhost:8000/frames/single', {
+      const frameRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/frames/single`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -97,7 +97,7 @@ export const SingleSeqForm: React.FC = () => {
       if (cleanedTargetSequence && frameData) {
         let alignRes: Response;
         if (isAuthenticated) {
-          alignRes = await fetchWithAuth('http://localhost:8000/align/single', {
+          alignRes = await fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/align/single`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -107,7 +107,7 @@ export const SingleSeqForm: React.FC = () => {
             })
           });
         } else {
-          alignRes = await fetch('http://localhost:8000/align/single', {
+          alignRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/align/single`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

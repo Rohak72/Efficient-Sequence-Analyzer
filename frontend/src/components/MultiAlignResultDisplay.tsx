@@ -145,7 +145,7 @@ const TopHitsExplorer: React.FC<TopHitsExplorerProps> = ({ jobId, availableTarge
             try {
                 // Choose the correct fetch function based on login status
                 const fetcher = isAuthenticated ? fetchWithAuth : fetch;
-                const response = await fetcher(`http://localhost:8000/results/${jobId}/tophits/${encodeURIComponent(selectedTarget)}`);
+                const response = await fetcher(`${import.meta.env.VITE_API_BASE_URL}/results/${jobId}/tophits/${encodeURIComponent(selectedTarget)}`);
 
                 if (!response.ok) throw new Error("Failed to fetch top hits.");
 
@@ -239,7 +239,7 @@ export const MultiAlignResultDisplay: React.FC<MultiAlignResultDisplayProps> = (
       try {
         // Choose the correct fetch function based on login status
         const fetcher = isAuthenticated ? fetchWithAuth : fetch;
-        const response = await fetcher(`http://localhost:8000/results/${job_id}/frames/${encodeURIComponent(selectedInput)}`);
+        const response = await fetcher(`${import.meta.env.VITE_API_BASE_URL}/results/${job_id}/frames/${encodeURIComponent(selectedInput)}`);
 
         if (!response.ok) throw new Error("Failed to fetch frame data.");
 

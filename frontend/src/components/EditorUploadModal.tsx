@@ -60,7 +60,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpl
       formData.append('type', fileType);
 
       // We use fetchWithAuth but don't need to stringify the body for FormData
-      return fetchWithAuth('http://localhost:8000/files/upload', {
+      return fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/files/upload`, {
         method: 'POST',
         body: formData, // Headers are set automatically for FormData by the browser
       });

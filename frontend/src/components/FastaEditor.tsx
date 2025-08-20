@@ -74,7 +74,7 @@ export const FastaEditor: React.FC = () => {
       setIsLoading(true);
       const fetchFileContent = async () => {
         try {
-          const response = await fetchWithAuth(`http://localhost:8000/files/${fileId}/read`);
+          const response = await fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/files/${fileId}/read`);
           const data = await response.json();
 
           if (!response.ok) {
@@ -135,7 +135,7 @@ export const FastaEditor: React.FC = () => {
       setIsSaving(true);
       const plainTextContent = convertHTMLToFASTA(content);
       try {
-        const response = await fetchWithAuth(`http://localhost:8000/files/${fileId}/edit`, {
+        const response = await fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/files/${fileId}/edit`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ content: plainTextContent }),
@@ -171,7 +171,7 @@ export const FastaEditor: React.FC = () => {
     formData.append('type', fileType);
 
     try {
-      const response = await fetchWithAuth('http://localhost:8000/files/upload', {
+      const response = await fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/files/upload`, {
         method: 'POST',
         body: formData,
       });
