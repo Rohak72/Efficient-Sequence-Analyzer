@@ -117,7 +117,7 @@ export const FastaEditor: React.FC = () => {
     ? 'w-full h-full flex flex-col'
     : 'w-full max-w-5xl rounded-2xl bg-white p-6 shadow-2xl shadow-slate-200';
 
-  const handleContentChange = (newContent: string, delta: any, source: string) => {
+  const handleContentChange = (newContent: string, _delta: any, source: string) => {
     // Always update the visual content
     setContent(newContent);
 

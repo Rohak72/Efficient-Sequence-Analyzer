@@ -1,6 +1,6 @@
 // src/components/Sidebar.tsx
 import { 
-  ChevronLast, ChevronFirst, MoreVertical, Plus, Folder, FileText, FlaskConical, LogIn, ChevronDown, Upload, 
+  ChevronLast, ChevronFirst, Plus, Folder, FileText, FlaskConical, LogIn, ChevronDown, Upload, 
   Trash2
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
@@ -86,7 +86,7 @@ const DropdownSection: React.FC<DropdownSectionProps> = ({ title, icon, files, i
 
 // The main Sidebar component
 export const Sidebar: React.FC = () => {
-  const { user, token, logout, fetchWithAuth } = useAuth();
+  const { user, token, fetchWithAuth } = useAuth();
   const fileUploadRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const isLoggedIn = !!user;

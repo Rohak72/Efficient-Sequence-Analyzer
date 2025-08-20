@@ -52,7 +52,7 @@ export const AlignResultDisplay: React.FC<AlignResultProps> = ({ data, isAuthent
   }
 
   const { alignment_result, download_links } = data;
-  const { identity_pct, target, top_orf, alignment } = alignment_result;
+  const { identity_pct, top_orf, alignment } = alignment_result;
 
   return (
     <div className="mt-8 w-full max-w-5xl mx-auto space-y-6">
