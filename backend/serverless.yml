@@ -1,10 +1,13 @@
 # backend/serverless.yml
 
-# This is the name for your group of services on the Serverless Dashboard
+org: rohakj
+app: simpliseq-app
+
+# Official name for this specific deployable unit; prefix for resource group in AWS.
 service: simpliseq
 
-# We're using the latest version of the Serverless Framework
-frameworkVersion: '3'
+# Specify the latest version of the Serverless Framework.
+frameworkVersion: '4'
 
 provider:
   name: aws
@@ -35,17 +38,16 @@ provider:
 functions:
   api:
     handler: lambda_handler.handler # Point to the handler object inside lambda_handler.py.
-    events:
-      - httpApi: '*' # Enable API Gateway functionality.
+    url: true # Enable public URL and API Gateway functionality.
     timeout: 30 # Allow function a more generous time block for longer align operations.
-  
+
 plugins:
-  - serverless-python-requirements
+  - serverless-python-requirements # Define an explicit, reliable plugin config for package handling.
 
 custom:
   pythonRequirements:
-    zip: true
+    dockerizePip: true # Leverage Docker to platform-standardize packages (MacOS -> Linux x86).
 
 package:
   patterns:
-    - '!.venv/**' # Tell Serverless to bypass uploading the large .venv folder.
+    - '!.venv/**' # Dependencies are automatically handled via plugin, no need to specify.
