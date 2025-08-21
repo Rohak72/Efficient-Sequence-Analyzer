@@ -75,6 +75,7 @@ export const MultiSeqForm: React.FC = () => {
 
             if (!alignRes.ok) {
                 const errorData = await alignRes.json();
+                console.error("Alignment error response:", errorData);
                 throw new Error(errorData.detail || 'Failed to process alignment.');
             }
             
