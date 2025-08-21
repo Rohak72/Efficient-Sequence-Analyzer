@@ -5,7 +5,7 @@ A wrapper for Expasy Translate and EMBOSS Needle, automating the six-frame trans
 
 Future Plans:
 - Incorporate Litestream to handle concurrent processes with write-ahead logging to a designated S3 bucket.
-- Build async processes to ingest compute-expensive alignment tasks within API Gateway's 30-sec timeout limit.
+- Build async processes to ingest compute-expensive alignment tasks within API Gateway's 30-sec limit.
 
 Tech Stack:
 - Backend: Python, FastAPI, SQLite (via SQLAlchemy ORM)
