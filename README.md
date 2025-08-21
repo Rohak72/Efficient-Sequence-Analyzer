@@ -8,6 +8,6 @@ Future Plans:
 - Build async processes to ingest compute-expensive alignment tasks within API Gateway's 30-sec timeout limit.
 
 Tech Stack:
-- Backend: Python, FastAPI,
+- Backend: Python, FastAPI, SQLite (via SQLAlchemy ORM)
 - Frontend: React, Node.js, Tailwind CSS
 - Deployment: AWS Lambda, API Gateway, Vercel Hosting
