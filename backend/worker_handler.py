@@ -1,0 +1,115 @@
+from app.scripts.aws_tools import *
+from app.scripts.utils import *
+from app.scripts.build_alignment import *
+from app.scripts.frame_retrieve import *
+from app.database import get_db
+from fastapi import Depends
+import json
+
+"""
+SQS → Lambda handler → process_alignment_job
+    → run_pipeline (frames, hits, results, summary)
+    → Save JSON artifacts to S3
+    → Redis: status, S3 keys, available targets
+    → (Optional) Save permanent artifacts + presigned URLs if logged in.
+"""
+
+def handler(event: dict, context):
+    print("Received JSON event!")
+    for record in event.get("Records"):
+        message = json.loads(record.get("body"))
+        process_alignment_job(message)
+    
+    return {'status': 200}
+
+def process_alignment_job(message: dict, db = Depends(get_db)):
+    job_id = message.get("job_id")
+    input_key = message.get("input_key")
+    target_key = message.get("target_key")
+    direction = message.get("direction")
+    user_id = message.get("user_id")
+
+    try:
+        input_fasta = download_from_s3(input_key)
+        target_fasta = download_from_s3(target_key)
+
+        frames, top_hits, alignment_results, summary_df = run_pipeline(input_fasta, target_fasta, direction, user_id)
+        available_targets = list(top_hits.keys())
+        
+        alignment_key = f"tmp/{job_id}/alignment_res.json"
+        top_hits_key = f"tmp/{job_id}/top_hits.json"
+        frames_key = f"tmp/{job_id}/frames.json"
+
+        upload_to_s3(json.dumps(alignment_results), alignment_key)
+        upload_to_s3(json.dumps(top_hits), top_hits_key)
+        upload_to_s3(json.dumps(frames), frames_key)
+
+        redis_payload = {
+            "status": "COMPLETED",
+            "alignment_key": alignment_key,
+            "top_hits_key": top_hits_key,
+            "frames_key": frames_key,
+            "available_targets": json.dumps(available_targets)
+        }
+        
+        if user_id:
+            results_key, top_hits_key = save_alignment_artifacts(results_df=summary_df, top_hits=top_hits,
+                                                                current_user=user_id, s3_client=s3_client,
+                                                                bucket_name=fasta_bucket_name, db=db)
+
+            presigned_result_url = generate_presigned_url(results_key, filename="orf_mappings.csv")
+            presigned_hits_url = generate_presigned_url(top_hits_key, filename="top_hits.csv")
+            
+            redis_payload["download_links"] = json.dumps({
+                "orf_mappings": presigned_result_url,
+                "top_hits": presigned_hits_url
+            })
+            
+        redis_client.hset(job_id, mapping=redis_payload)
+        print(f"Job {job_id} completed! Results, hits, and frames saved to S3.")
+    except Exception as e:
+        print(f"Job {job_id} failed! Exception: {e}.")
+        redis_client.hset(job_id, {"status": "FAILED"})
+
+def run_pipeline(input_fasta: StringIO, target_fasta: StringIO, direction: str, current_user: str, 
+                  align_threshold: float) -> tuple:
+    input_sequences = process_fasta_upload(input_fasta)
+    target_sequences = process_fasta_upload(target_fasta)
+
+    all_frames_data = {}
+    for name, seq in input_sequences.items():
+        all_frames_data[name] = generate_frames(seq, direction)
+    
+    alignment_results, top_hits, summary_df = extract_alignment_results(query_frames=all_frames_data,
+                                                targets=target_sequences, direction=direction,
+                                                align_threshold=align_threshold)
+    
+    return all_frames_data, top_hits, alignment_results, summary_df
+
+def extract_alignment_results(query_frames: Dict, targets: Dict[str, str], direction: str,
+                                  align_threshold: float) -> tuple:
+    """
+    This is the core logic extracted from your original /align/multi endpoint.
+    It can now be reused by both the old and new endpoints.
+    """
+    top_hits = defaultdict(list)
+    results_df = pd.DataFrame(columns = ["Name", "Target", "Identity-Score", "Direction", 
+                                         "Most-Likely-ORF", "Notes"])
+    alignment_results = {}
+    
+    for seq_name, frame_data in query_frames.items():
+        all_orfs = [orf for frame in frame_data.values() for orf in frame.get('orf_set', [])]
+
+        if not all_orfs:
+            results_df = data_export(results_df, seq_name, direction, "N/A", 0.0, "N/A", notes="No ORFs!")
+            alignment_results[seq_name] = {'detail': 'No valid ORFs found.'}
+            continue
+
+        results_df, final_align_res = batch_alignment_cycle(direction=direction, record_id=seq_name, 
+                                                            orf_set=all_orfs, target_set=targets, 
+                                                            top_hits=top_hits, curr_results_data=results_df, 
+                                                            align_threshold=align_threshold)
+
+        alignment_results[seq_name] = final_align_res or {'detail': 'No final alignment determined.'}
+        
+    return alignment_results, top_hits, results_df
