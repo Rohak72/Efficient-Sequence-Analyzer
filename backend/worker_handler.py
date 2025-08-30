@@ -5,6 +5,7 @@ from app.scripts.frame_retrieve import *
 from app.database import get_db
 from fastapi import Depends
 import json
+import traceback
 
 """
 SQS → Lambda handler → process_alignment_job
@@ -20,9 +21,13 @@ def handler(event: dict, context):
         message = json.loads(record.get("body"))
         process_alignment_job(message)
     
+    # Debugging stdout:
+    # print(f"Lambda {context.function_name} invoked with request ID: {context.aws_request_id}.")
+    # print(f"Time left: {context.get_remaining_time_in_millis()} ms.")
+
     return {'status': 200}
 
-def process_alignment_job(message: dict, db = Depends(get_db)):
+async def process_alignment_job(message: dict, db = Depends(get_db)):
     job_id = message.get("job_id")
     input_key = message.get("input_key")
     target_key = message.get("target_key")
@@ -33,18 +38,19 @@ def process_alignment_job(message: dict, db = Depends(get_db)):
         input_fasta = download_from_s3(input_key)
         target_fasta = download_from_s3(target_key)
 
-        frames, top_hits, alignment_results, summary_df = run_pipeline(input_fasta, target_fasta, direction, user_id)
+        frames, top_hits, alignment_results, summary_df = await run_pipeline(input_fasta, target_fasta, 
+                                                                             direction, user_id)
         available_targets = list(top_hits.keys())
         
         alignment_key = f"tmp/{job_id}/alignment_res.json"
         top_hits_key = f"tmp/{job_id}/top_hits.json"
         frames_key = f"tmp/{job_id}/frames.json"
 
-        upload_to_s3(json.dumps(alignment_results), alignment_key)
-        upload_to_s3(json.dumps(top_hits), top_hits_key)
-        upload_to_s3(json.dumps(frames), frames_key)
+        await upload_to_s3(json.dumps(alignment_results), alignment_key)
+        await upload_to_s3(json.dumps(top_hits), top_hits_key)
+        await upload_to_s3(json.dumps(frames), frames_key)
 
-        redis_payload = {
+        job_payload = {
             "status": "COMPLETED",
             "alignment_key": alignment_key,
             "top_hits_key": top_hits_key,
@@ -60,21 +66,22 @@ def process_alignment_job(message: dict, db = Depends(get_db)):
             presigned_result_url = generate_presigned_url(results_key, filename="orf_mappings.csv")
             presigned_hits_url = generate_presigned_url(top_hits_key, filename="top_hits.csv")
             
-            redis_payload["download_links"] = json.dumps({
+            job_payload["download_links"] = json.dumps({
                 "orf_mappings": presigned_result_url,
                 "top_hits": presigned_hits_url
             })
-            
-        redis_client.hset(job_id, mapping=redis_payload)
+        
+        jobs_table.put_item(Item={"job_id": job_id, **job_payload})
         print(f"Job {job_id} completed! Results, hits, and frames saved to S3.")
     except Exception as e:
         print(f"Job {job_id} failed! Exception: {e}.")
-        redis_client.hset(job_id, {"status": "FAILED"})
+        traceback.print_exc()
+        jobs_table.put_item(Item={"job_id": job_id, "status": "FAILED"})
 
-def run_pipeline(input_fasta: StringIO, target_fasta: StringIO, direction: str, current_user: str, 
-                  align_threshold: float) -> tuple:
-    input_sequences = process_fasta_upload(input_fasta)
-    target_sequences = process_fasta_upload(target_fasta)
+async def run_pipeline(input_fasta: StringIO, target_fasta: StringIO, direction: str, current_user: str, 
+                       align_threshold: float = 0.98) -> tuple:
+    input_sequences = await process_fasta_upload(input_fasta)
+    target_sequences = await process_fasta_upload(target_fasta)
 
     all_frames_data = {}
     for name, seq in input_sequences.items():
