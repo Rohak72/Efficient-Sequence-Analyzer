@@ -3,18 +3,16 @@ load_dotenv()
 
 import boto3
 import json
-import redis
 import os
 import io
 
 fasta_bucket_name = os.environ.get("FASTA_S3_BUCKET_NAME")
 sqs_queue_url = os.environ.get("JOB_QUEUE_URL")
-sqs_client = boto3.client("sqs")
+dynamo_table_name = os.environ.get("DYNAMO_TABLE_NAME", "JobStatus")
 
-redis_client = redis.Redis(
-    host=os.environ.get("REDIS_HOST", "localhost"),
-    port=int(os.environ.get("REDIS_PORT", 6379)),
-    decode_responses=True)
+sqs_client = boto3.client("sqs")
+dynamo = boto3.resource("dynamodb")
+table = dynamo.Table(dynamo_table_name)
 
 # In Lambda, boto3 will automatically find the IAM Role credentials -- no keys needed.
 # However, when running locally, we need to collect the credentials ourselves.
@@ -30,12 +28,17 @@ else:
         's3',
         aws_access_key_id=aws_access_key_id,
         aws_secret_access_key=aws_secret_access_key,
-        region_name="us-east-2")
+        region_name="us-east-2"
+    )
 
 # S3 Helpers
 
 async def upload_to_s3(file_obj, upload_key: str):
-    raw_content = await file_obj.read()
+    if isinstance(file_obj, str):
+        raw_content = file_obj.encode('utf-8')
+    else:
+        raw_content = await file_obj.read()
+    
     s3_client.put_object(Bucket=fasta_bucket_name, Key=upload_key, Body=raw_content)
 
 def download_from_s3(file_key: str):
@@ -55,7 +58,7 @@ def generate_presigned_url(key: str, filename: str = None, expires: int = 3600):
 
 # SQS Helper
 
-async def enqueue_job(job_id, input_key, target_key, direction, user_id=None):
+def enqueue_job(job_id, input_key, target_key, direction, user_id=None):
     message = {
         "job_id": job_id,
         "input_key": input_key,
@@ -64,16 +67,20 @@ async def enqueue_job(job_id, input_key, target_key, direction, user_id=None):
         "user_id": user_id
     }
     sqs_client.send_message(QueueUrl=sqs_queue_url, MessageBody=json.dumps(message))
-    set_job_status(job_id, "PENDING")
+
+    table.put_item(
+        Item={
+            "job_id": job_id,
+            "status": "PENDING"
+        }
+    )
 
 # Redis Helpers
 
-def set_job_status(job_id, status, result_key=None):
-    data = {"status": status}
-    if result_key:
-        data["result_key"] = result_key
-    redis_client.hset(job_id, data)
-
 def get_job_status(job_id):
-    status = redis_client.hgetall(job_id)
-    return status if status else {'status': 'UNKNOWN'}
+    try:
+        response = table.get_item(Key={"job_id": job_id})
+        return response.get("Item", {"status": "UNKNOWN"})
+    except Exception as e:
+        print(f"Error fetching job status: {e}")
+        return {"status": "ERROR"}
