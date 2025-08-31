@@ -8,8 +8,8 @@ router = APIRouter(prefix="/jobs")
 
 @router.post("/submit")
 async def submit_alignment_job(input_fasta: UploadFile = File(...), target_fasta: UploadFile = File(...), 
-                               direction = Form("BOTH"), current_user: User = Depends(get_active_user)):
-    job_id = uuid.uuid4()
+                               direction: str = Form("BOTH"), current_user: User = Depends(get_active_user)):
+    job_id = str(uuid.uuid4())
     user_id = current_user.id if current_user else None
     input_key = f"tmp/{job_id}/input.fasta"
     target_key = f"tmp/{job_id}/target.fasta"
@@ -27,4 +27,4 @@ def poll_alignment_status(job_id: str):
     if not job_data:
         return {'status': 'UNKNOWN'}
     
-    return job_data
+    return {'job_id': job_id, **job_data}
