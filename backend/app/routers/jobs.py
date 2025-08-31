@@ -1,14 +1,15 @@
 from fastapi import APIRouter, UploadFile, Depends, File, Form
-from app.routers.auth import get_active_user
+from app.routers.auth import get_optional_user
 from app.models.auth_tools import User
 from app.scripts.aws_tools import *
+from typing import Optional
 import uuid
 
 router = APIRouter(prefix="/jobs")
 
 @router.post("/submit")
 async def submit_alignment_job(input_fasta: UploadFile = File(...), target_fasta: UploadFile = File(...), 
-                               direction: str = Form("BOTH"), current_user: User = Depends(get_active_user)):
+                               direction: str = Form("BOTH"), current_user: Optional[User] = Depends(get_optional_user)):
     job_id = str(uuid.uuid4())
     user_id = current_user.id if current_user else None
     input_key = f"tmp/{job_id}/input.fasta"
