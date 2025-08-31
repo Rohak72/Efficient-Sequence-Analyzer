@@ -15,11 +15,11 @@ SQS → Lambda handler → process_alignment_job
     → (Optional) Save permanent artifacts + presigned URLs if logged in.
 """
 
-def handler(event: dict, context):
+async def handler(event: dict, context):
     print("Received JSON event!")
     for record in event.get("Records"):
         message = json.loads(record.get("body"))
-        process_alignment_job(message)
+        await process_alignment_job(message)
     
     # Debugging stdout:
     # print(f"Lambda {context.function_name} invoked with request ID: {context.aws_request_id}.")
@@ -35,17 +35,22 @@ async def process_alignment_job(message: dict, db = Depends(get_db)):
     user_id = message.get("user_id")
 
     try:
+        print("Downloading from S3...")
         input_fasta = download_from_s3(input_key)
         target_fasta = download_from_s3(target_key)
-
+        print("S3 FASTAs downloaded!")
+        
+        print("Starting alignment pipeline...")
         frames, top_hits, alignment_results, summary_df = await run_pipeline(input_fasta, target_fasta, 
                                                                              direction, user_id)
         available_targets = list(top_hits.keys())
+        print("Finished alignment pipeline.")
         
         alignment_key = f"tmp/{job_id}/alignment_res.json"
         top_hits_key = f"tmp/{job_id}/top_hits.json"
         frames_key = f"tmp/{job_id}/frames.json"
 
+        print("Uploading JSON artifacts to S3.")
         await upload_to_s3(json.dumps(alignment_results), alignment_key)
         await upload_to_s3(json.dumps(top_hits), top_hits_key)
         await upload_to_s3(json.dumps(frames), frames_key)
