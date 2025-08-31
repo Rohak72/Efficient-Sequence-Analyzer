@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from app.scripts.s3_tools import * # We can access our premade S3 client here!
+from app.scripts.aws_tools import * # We can access our premade S3 client here!
 from botocore.exceptions import ClientError
 
 DB_BUCKET_NAME = os.environ.get("DB_S3_BUCKET_NAME")

@@ -1,7 +1,7 @@
 from app.scripts.frame_retrieve import *
 from app.scripts.build_alignment import *
 from app.scripts.utils import *
-from app.scripts.s3_tools import *
+from app.scripts.aws_tools import *
 from app.models.seq_input import *
 from app.models.auth_tools import *
 from app.routers.auth import get_optional_user
@@ -115,8 +115,7 @@ def process_multi_alignment(
         query_frames=all_frames_data,
         targets=target_sequences,
         direction=direction,
-        align_threshold=align_threshold
-    )
+        align_threshold=align_threshold)
     
     # 4. Cache the large, detailed results for lazy loading
     job_id = str(uuid.uuid4())
@@ -135,7 +134,7 @@ def process_multi_alignment(
     if current_user:
         results_key, top_hits_key = save_alignment_artifacts(results_df=results_df, top_hits=top_hits,
                                                              current_user=current_user, s3_client=s3_client,
-                                                             bucket_name=bucket_name, db=db)
+                                                             bucket_name=fasta_bucket_name, db=db)
 
         presigned_result_url = generate_presigned_url(results_key, filename="orf_mappings.csv")
         presigned_hits_url = generate_presigned_url(top_hits_key, filename="top_hits.csv")
@@ -209,8 +208,7 @@ def build_frames_multi(data: FrameRequestMulti):
     return frame_set
 
 @router.post("/align/single")
-def pairwise_align_single(data: AlignmentRequestSingle, db: Session = Depends(get_db), 
-                          current_user: Optional[User] = Depends(get_optional_user)):
+def pairwise_align_single(data: AlignmentRequestSingle):
     top_hits = defaultdict(list)
     results_df = pd.DataFrame(columns = ["Name", "Target", "Identity-Score", "Direction", 
                                          "Most-Likely-ORF", "Notes"])
@@ -267,7 +265,7 @@ def pairwise_align_multi(data: AlignmentRequestMulti, db: Session = Depends(get_
     if current_user:
         results_key, top_hits_key = save_alignment_artifacts(results_df=results_df, top_hits=top_hits,
                                                              current_user=current_user, s3_client=s3_client,
-                                                             bucket_name=bucket_name, db=db)
+                                                             bucket_name=fasta_bucket_name, db=db)
         presigned_result_url = generate_presigned_url(results_key, filename="orf_mappings.csv")
         presigned_hits_url = generate_presigned_url(top_hits_key, filename="top_hits.csv")
 

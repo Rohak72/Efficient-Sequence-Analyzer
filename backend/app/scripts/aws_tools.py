@@ -12,7 +12,7 @@ dynamo_table_name = os.environ.get("DYNAMO_TABLE_NAME", "JobStatus")
 
 sqs_client = boto3.client("sqs")
 dynamo = boto3.resource("dynamodb")
-table = dynamo.Table(dynamo_table_name)
+jobs_table = dynamo.Table(dynamo_table_name)
 
 # In Lambda, boto3 will automatically find the IAM Role credentials -- no keys needed.
 # However, when running locally, we need to collect the credentials ourselves.
@@ -68,7 +68,7 @@ def enqueue_job(job_id, input_key, target_key, direction, user_id=None):
     }
     sqs_client.send_message(QueueUrl=sqs_queue_url, MessageBody=json.dumps(message))
 
-    table.put_item(
+    jobs_table.put_item(
         Item={
             "job_id": job_id,
             "status": "PENDING"
@@ -79,7 +79,7 @@ def enqueue_job(job_id, input_key, target_key, direction, user_id=None):
 
 def get_job_status(job_id):
     try:
-        response = table.get_item(Key={"job_id": job_id})
+        response = jobs_table.get_item(Key={"job_id": job_id})
         return response.get("Item", {"status": "UNKNOWN"})
     except Exception as e:
         print(f"Error fetching job status: {e}")
