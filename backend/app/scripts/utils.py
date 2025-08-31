@@ -11,7 +11,7 @@ generated to an external dataframe. Functions as a helper script for main.
 """
 
 from io import StringIO
-from typing import Dict
+from typing import Dict, Union
 from app.models.denote_file import AlignmentResult
 from app.models.auth_tools import User
 from collections import defaultdict
@@ -22,9 +22,14 @@ from fastapi import UploadFile, HTTPException, status
 import pandas as pd
 import uuid
 
-async def process_fasta_upload(fasta_file: UploadFile) -> Dict[str, str]:
-    contents = await fasta_file.read()
-    stream = StringIO(contents.decode("utf-8"))
+async def process_fasta_upload(fasta_file: Union[UploadFile, StringIO]) -> Dict[str, str]:
+    if isinstance(fasta_file, UploadFile):
+        contents = await fasta_file.read()
+        stream = StringIO(contents.decode("utf-8"))
+    elif isinstance(fasta_file, StringIO):
+        stream = fasta_file
+    else:
+        raise TypeError("Param fasta_file must be of type UploadFile or StringIO!")
 
     try:
         raw_seq_library = SeqIO.to_dict(SeqIO.parse(stream, "fasta"))
@@ -73,10 +78,11 @@ def build_target_map(target_orf_hits: dict):
     return df
 
 def save_alignment_artifacts(results_df: pd.DataFrame, top_hits: defaultdict,
-                             current_user: User, s3_client, bucket_name: str, db):
+                             current_user: Union[User, str], s3_client, bucket_name: str, db):
     unique_id = uuid.uuid4()
-    results_key = f"users/{current_user.id}/results/{unique_id}_orf_mappings.csv"
-    top_hits_key = f"users/{current_user.id}/results/{unique_id}_top_hits.csv"
+    user_id = current_user if isinstance(current_user, str) else current_user.id
+    results_key = f"users/{user_id}/results/{unique_id}_orf_mappings.csv"
+    top_hits_key = f"users/{user_id}/results/{unique_id}_top_hits.csv"
 
     results_buffer = StringIO()
     results_df.to_csv(results_buffer, index=False)
