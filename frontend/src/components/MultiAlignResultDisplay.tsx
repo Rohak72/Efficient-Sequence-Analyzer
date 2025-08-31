@@ -28,7 +28,7 @@ interface AlignSummaryData {
 
 // The props for the new top-level component
 interface MultiAlignResultDisplayProps {
-  jobId: string;
+  jobID: string;
   isAuthenticated: boolean;
 }
 
@@ -269,7 +269,7 @@ const JobResultDisplay: React.FC<JobResultDisplayProps> = ({ alignSummaryData, i
 
 
 // --- MAIN COMPONENT (Now handles polling and state) ---
-export const MultiAlignResultDisplay: React.FC<MultiAlignResultDisplayProps> = ({ jobId, isAuthenticated }) => {
+export const MultiAlignResultDisplay: React.FC<MultiAlignResultDisplayProps> = ({ jobID: jobId, isAuthenticated }) => {
     const [jobStatus, setJobStatus] = useState<'PENDING' | 'COMPLETED' | 'FAILED'>('PENDING');
     const [alignSummaryData, setAlignSummaryData] = useState<AlignSummaryData | null>(null);
     const pollIntervalRef = useRef<number | null>(null);

@@ -12,14 +12,11 @@ export const MultiSeqForm: React.FC = () => {
     
     const [loading, setLoading] = useState(false);
     const [apiError, setApiError] = useState<string | null>(null);
-    
-    // States for API responses
-    const [alignResponse, setAlignResponse] = useState<any | null>(null);
+    const [jobID, setJobID] = useState<string | null>(null);
 
     const { token, fetchWithAuth } = useAuth();
     const isAuthenticated = !!token;
     
-    // REPLACE IT WITH THIS NEW, SIMPLER FUNCTION
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!inputFile || !targetFile) {
@@ -29,7 +26,7 @@ export const MultiSeqForm: React.FC = () => {
         
         setLoading(true);
         setApiError(null);
-        setAlignResponse(null); // We only need one response state now
+        setJobID(null); // Store Job ID instead of alignment response.
 
         try {
             const getFileObject = async (file: File | ServerFile): Promise<File> => {
@@ -64,24 +61,20 @@ export const MultiSeqForm: React.FC = () => {
             formData.append('target_fasta', importedTargetFile as File);
             formData.append('direction', direction);
 
-            // *** CHANGED: Use the correct fetcher (authenticated or not) ***
             const fetcher = isAuthenticated ? fetchWithAuth : fetch;
 
-            // *** CHANGED: Make ONE single, efficient API call to the new endpoint ***
-            const alignRes = await fetcher(`${import.meta.env.VITE_API_BASE_URL}/process/multi`, {
+            const response = await fetcher(`${import.meta.env.VITE_API_BASE_URL}/jobs/submit`, {
                 method: 'POST',
-                body: formData, // The browser sets the correct headers for FormData
+                body: formData,
             });
 
-            if (!alignRes.ok) {
-                const errorData = await alignRes.json();
-                console.log("Alignment error response:", errorData);
-                throw new Error(errorData.detail || 'Failed to process alignment.');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Failed to submit alignment job.');
             }
             
-            // *** CHANGED: Set the lean summary data from the response ***
-            const summaryData = await alignRes.json();
-            setAlignResponse(summaryData);
+            const jobSubmissionData = await response.json();
+            setJobID(jobSubmissionData.job_id);
 
         } catch (err: any) {
             setApiError(err.message);
@@ -172,9 +165,9 @@ export const MultiSeqForm: React.FC = () => {
             </div>
             
             {/* --- RESULTS DISPLAY --- */}
-            {alignResponse && (
+            {jobID && (
                 <MultiAlignResultDisplay 
-                    alignSummaryData={alignResponse}
+                    jobID={jobID}
                     isAuthenticated={isAuthenticated}
                 />
             )}
