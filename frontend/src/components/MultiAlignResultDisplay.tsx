@@ -272,48 +272,60 @@ const JobResultDisplay: React.FC<JobResultDisplayProps> = ({ alignSummaryData, i
 export const MultiAlignResultDisplay: React.FC<MultiAlignResultDisplayProps> = ({ jobID: jobId, isAuthenticated }) => {
     const [jobStatus, setJobStatus] = useState<'PENDING' | 'COMPLETED' | 'FAILED'>('PENDING');
     const [alignSummaryData, setAlignSummaryData] = useState<AlignSummaryData | null>(null);
-    const pollIntervalRef = useRef<number | null>(null);
+
+    // --- REFS FOR MANAGING THE POLLING LOGIC ---
+    // useRef is used because these values don't need to trigger a re-render when they change.
+    const pollTimeoutRef = useRef<number | null>(null); // Stores the ID of our setTimeout
+    const pollDelayRef = useRef<number>(2000); // Start with a 2-second delay
+    const maxPollDelay = 30000; // Cap the delay at 30 seconds
+    const pollBackoffFactor = 1.5; // Increase delay by 50% each time
 
     useEffect(() => {
+        // --- NEW POLLING FUNCTION WITH BACKOFF LOGIC ---
         const poll = async () => {
             try {
-                const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/status/${jobId}`);
+                const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/status/${jobId}`);
                 if (!response.ok) {
-                    // Stop polling on server errors like 404 or 500
                     throw new Error(`Server responded with status: ${response.status}`);
                 }
                 const data = await response.json();
 
                 if (data.status === 'COMPLETED' || data.status === 'FAILED') {
-                    if (pollIntervalRef.current) {
-                        clearInterval(pollIntervalRef.current);
-                    }
+                    // --- JOB IS DONE: Stop polling and update state ---
                     setJobStatus(data.status);
                     if (data.status === 'COMPLETED') {
                         setAlignSummaryData(data as AlignSummaryData);
                     }
+                    // Do NOT schedule another poll
+                    return; 
                 }
-                // If status is 'PENDING', do nothing and let the interval continue
+
+                // --- JOB IS STILL PENDING: Schedule the next poll with a longer delay ---
+                const nextDelay = Math.min(pollDelayRef.current * pollBackoffFactor, maxPollDelay);
+                pollDelayRef.current = nextDelay;
+                
+                // Use setTimeout to schedule the next execution of this same function
+                pollTimeoutRef.current = window.setTimeout(poll, nextDelay);
+
             } catch (error) {
                 console.error("Polling failed:", error);
-                setJobStatus('FAILED'); // Set to failed on network error
-                if (pollIntervalRef.current) {
-                    clearInterval(pollIntervalRef.current);
-                }
+                setJobStatus('FAILED'); // Set to failed on network/parsing error
             }
         };
 
-        // Start polling immediately and then every 3 seconds
-        poll();
-        pollIntervalRef.current = window.setInterval(poll, 3000);
+        // --- START THE POLLING CHAIN ---
+        // We use an initial short delay to give the backend a moment to start.
+        pollTimeoutRef.current = window.setTimeout(poll, 1000);
 
-        // Cleanup function to stop polling when the component unmounts
+        // --- CLEANUP FUNCTION ---
+        // This is crucial. It runs if the component is unmounted (e.g., user navigates away).
+        // It prevents the poll function from being called after the component is gone.
         return () => {
-            if (pollIntervalRef.current) {
-                clearInterval(pollIntervalRef.current);
+            if (pollTimeoutRef.current) {
+                clearTimeout(pollTimeoutRef.current);
             }
         };
-    }, [jobId]);
+    }, [jobId]); // This effect only re-runs if the jobId changes.
 
     return (
         <div className="w-full max-w-5xl mx-auto space-y-8 mt-8">
