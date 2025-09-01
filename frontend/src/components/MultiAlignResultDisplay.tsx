@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { FrameResultDisplay } from './FrameResultDisplay';
-import { useAuth } from '../contexts/AuthContext';
 import { BarChart2, ChevronUp, ChevronDown, Download, FileText, UserCheck, AlertCircle, SearchCheck, Loader2, ServerCrash } from 'lucide-react';
 
 // --- TYPE DEFINITIONS ---
@@ -15,10 +14,12 @@ interface AlignmentResult {
 }
 
 // This now represents the final, successful job payload
-interface AlignSummaryData {
+interface CompletedJobData {
   job_id: string;
-  status: 'COMPLETED'; // We only store data for completed jobs
-  alignment_results: Record<string, AlignmentResult>;
+  status: 'COMPLETED';
+  alignment_key: string;
+  top_hits_key: string;
+  frames_key: string;
   available_targets: string[];
   download_links?: {
     orf_mappings: string;
@@ -31,13 +32,6 @@ interface MultiAlignResultDisplayProps {
   jobID: string;
   isAuthenticated: boolean;
 }
-
-// The props for the inner component that displays the results
-interface JobResultDisplayProps {
-    alignSummaryData: AlignSummaryData;
-    isAuthenticated: boolean;
-}
-
 
 // --- CHILD COMPONENT: AlignmentMetricsCard (No changes) ---
 const AlignmentMetricsCard: React.FC<{ result: AlignmentResult }> = ({ result }) => {
@@ -80,7 +74,7 @@ const AlignmentMetricsCard: React.FC<{ result: AlignmentResult }> = ({ result })
 // --- CHILD COMPONENT: ExportCard (No changes) ---
 interface ExportCardProps {
     isAuthenticated: boolean;
-    links?: AlignSummaryData['download_links'];
+    links?: CompletedJobData['download_links'];
 }
 const ExportCard: React.FC<ExportCardProps> = ({ isAuthenticated, links }) => {
   if (isAuthenticated && links) {
@@ -121,15 +115,11 @@ const ExportCard: React.FC<ExportCardProps> = ({ isAuthenticated, links }) => {
 
 // --- CHILD COMPONENT: TopHitsExplorer (No changes) ---
 interface TopHitsExplorerProps {
-    jobId: string;
     availableTargets: string[];
-    isAuthenticated: boolean;
+    allTopHits: Record<string, any[]>; // e.g., { "TargetA": [[...]], "TargetB": [[...]] }
 }
-const TopHitsExplorer: React.FC<TopHitsExplorerProps> = ({ jobId, availableTargets, isAuthenticated }) => {
+const TopHitsExplorer: React.FC<TopHitsExplorerProps> = ({ availableTargets, allTopHits }) => {
     const [selectedTarget, setSelectedTarget] = useState<string>('');
-    const [_currentHits, setCurrentHits] = useState<any[]>([]);
-    const [isLoadingHits, setIsLoadingHits] = useState(false);
-    const { fetchWithAuth } = useAuth();
 
     useEffect(() => {
         if (availableTargets.length > 0 && !selectedTarget) {
@@ -137,100 +127,119 @@ const TopHitsExplorer: React.FC<TopHitsExplorerProps> = ({ jobId, availableTarge
         }
     }, [availableTargets, selectedTarget]);
 
-    useEffect(() => {
-        if (!selectedTarget || !jobId) return;
+    if (!availableTargets || availableTargets.length === 0) {
+        return null;
+    }
 
-        const fetchHitsForTarget = async () => {
-            setIsLoadingHits(true);
-            setCurrentHits([]);
-            try {
-                const fetcher = isAuthenticated ? fetchWithAuth : fetch;
-                const response = await fetcher(`${import.meta.env.VITE_API_BASE_URL}/results/${jobId}/tophits/${encodeURIComponent(selectedTarget)}`);
-                if (!response.ok) throw new Error("Failed to fetch top hits.");
-                const data = await response.json();
-                setCurrentHits(data);
-            } catch (error) { 
-                console.error("Failed to fetch top hits:", error);
-            } finally { 
-                setIsLoadingHits(false);
-            }
-        };
+    const currentHits = allTopHits[selectedTarget] || [];
 
-        fetchHitsForTarget();
-    }, [selectedTarget, jobId, fetchWithAuth, isAuthenticated]);
-    
-    if (availableTargets.length === 0) return null;
 
     return (
-        <div className="bg-white rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.08)] p-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-                <div className="flex items-center gap-x-3"><SearchCheck size={28} /><h3 className="text-2xl font-bold text-gray-800">Top Hits Explorer</h3></div>
-                <div className="relative w-full sm:w-64">
-                    <select value={selectedTarget} onChange={e => setSelectedTarget(e.target.value)} className="w-full pl-3 pr-10 py-2 text-md font-semibold text-gray-800 bg-gray-50 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 appearance-none">
-                        {availableTargets.map(name => <option key={name} value={name}>{name}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
-                </div>
-            </div>
-            {isLoadingHits ? (
-                <div className="flex justify-center items-center h-64"><Loader2 className="animate-spin text-teal-600" size={32}/></div>
-            ) : (
-                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        {/* Table content remains the same */}
-                    </table>
-                </div>
-            )}
-            <div className="mt-4 text-sm text-gray-500">
-                <p>This table shows the highest-ranking open reading frames (ORFs) from your input, sorted by their alignment 
-                identity score against the selected target protein. Note that <b>LCA</b> refers to <b>Longest Continuous Alignment</b>, or
-                the maximum window of overlap in the alignment readout.</p>
-            </div>
-        </div>
+      <div className="bg-white rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.08)] p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+              <div className="flex items-center gap-x-3"><SearchCheck size={28} /><h3 className="text-2xl font-bold text-gray-800">Top Hits Explorer</h3></div>
+              <div className="relative w-full sm:w-64">
+                  <select value={selectedTarget} onChange={e => setSelectedTarget(e.target.value)} className="w-full pl-3 pr-10 py-2 text-md font-semibold text-gray-800 bg-gray-50 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 appearance-none">
+                      {availableTargets.map(name => <option key={name} value={name}>{name}</option>)}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
+              </div>
+          </div>
+            
+          <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                      <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identity</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LCA</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source Sequence</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source ORF</th>
+                      </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                      {currentHits.map(([identity, lca, orf, originSeq], index) => (
+                          <tr key={index}>
+                              <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-800">{index + 1}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-gray-600">{identity.toFixed(1)}%</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-gray-600">{lca}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-gray-600 font-medium truncate max-w-xs" title={originSeq}>{originSeq}</td>
+                              <td className="px-6 py-4 font-mono text-sm text-gray-700 max-w-xs overflow-x-auto whitespace-nowrap">{orf}</td>
+                          </tr>
+                      ))}
+                  </tbody>
+              </table>
+          </div>
+
+          <div className="mt-4 text-sm text-gray-500">
+              <p>This table shows the highest-ranking open reading frames (ORFs) from your input, sorted by their alignment 
+              identity score against the selected target protein. Note that <b>LCA</b> refers to <b>Longest Continuous Alignment</b>, or
+              the maximum window of overlap in the alignment readout.</p>
+          </div>
+      </div>
     );
 };
 
-
+interface JobResultDisplayProps {
+    jobData: CompletedJobData;
+    isAuthenticated: boolean;
+}
 // --- NEW: Inner component to render the actual results UI ---
-const JobResultDisplay: React.FC<JobResultDisplayProps> = ({ alignSummaryData, isAuthenticated }) => {
+const JobResultDisplay: React.FC<JobResultDisplayProps> = ({ jobData, isAuthenticated }) => {
     const [selectedInput, setSelectedInput] = useState<string>('');
-    const [currentFrameData, setCurrentFrameData] = useState<any | null>(null);
-    const [isLoadingFrames, setIsLoadingFrames] = useState(false);
-    const { fetchWithAuth } = useAuth();
+
+    const [alignmentResults, setAlignmentResults] = useState<Record<string, AlignmentResult> | null>(null);
+    const [allFramesData, setAllFramesData] = useState<any | null>(null);
+    const [allTopHitsData, setAllTopHitsData] = useState<any | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // This effect fetches all necessary result files from S3 via our new proxy endpoint
+    useEffect(() => {
+        const fetchAllResults = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                // Fetch all three files in parallel for performance
+                const [alignRes, framesRes, hitsRes] = await Promise.all([
+                    fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/result-file?key=${jobData.alignment_key}`).then(res => res.json()),
+                    fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/result-file?key=${jobData.frames_key}`).then(res => res.json()),
+                    fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/result-file?key=${jobData.top_hits_key}`).then(res => res.json())
+                ]);
+
+                setAlignmentResults(alignRes);
+                setAllFramesData(framesRes);
+                setAllTopHitsData(hitsRes);
+
+                // Set the default selected input sequence
+                if (alignRes && Object.keys(alignRes).length > 0) {
+                    setSelectedInput(Object.keys(alignRes)[0]);
+                }
+            } catch (err) {
+                console.error("Failed to fetch result files:", err);
+                setError("Could not load result data from storage. The job may have expired or an error occurred.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchAllResults();
+    }, [jobData]); // This runs once when the jobData is first received
+
+    if (isLoading) {
+        return <div className="flex justify-center items-center h-48 bg-white rounded-lg shadow-md"><Loader2 className="animate-spin text-indigo-600" size={32}/> <span className="ml-4 text-gray-600">Loading results...</span></div>;
+    }
     
-    const inputSequenceNames = Object.keys(alignSummaryData.alignment_results);
-    const { job_id } = alignSummaryData;
-  
-    useEffect(() => {
-      if (inputSequenceNames.length > 0) {
-        setSelectedInput(inputSequenceNames[0]);
-      }
-    }, [alignSummaryData]);
-  
-    useEffect(() => {
-      if (!selectedInput || !job_id) return;
-  
-      const fetchFramesForInput = async () => {
-        setIsLoadingFrames(true);
-        setCurrentFrameData(null);
-        try {
-          const fetcher = isAuthenticated ? fetchWithAuth : fetch;
-          const response = await fetcher(`${import.meta.env.VITE_API_BASE_URL}/results/${job_id}/frames/${encodeURIComponent(selectedInput)}`);
-          if (!response.ok) throw new Error("Failed to fetch frame data.");
-          const data = await response.json();
-          setCurrentFrameData(data);
-        } catch (error) { 
-            console.error("Failed to fetch frame data:", error);
-        }
-        finally { setIsLoadingFrames(false); }
-      };
-  
-      fetchFramesForInput();
-    }, [selectedInput, job_id, fetchWithAuth, isAuthenticated]);
-  
-    if (!selectedInput) return null;
-  
-    const currentAlignmentResult = alignSummaryData.alignment_results[selectedInput];
+    if (error) {
+        return <div className="bg-red-50 p-6 rounded-lg shadow-md text-red-700">{error}</div>
+    }
+
+    if (!alignmentResults || !selectedInput) {
+        return <div className="bg-white p-6 rounded-lg shadow-md">No results found for this job.</div>;
+    }
+
+    const currentAlignmentResult = alignmentResults[selectedInput];
+    const currentFrameData = allFramesData ? allFramesData[selectedInput] : null;
   
     return (
       <>
@@ -238,7 +247,7 @@ const JobResultDisplay: React.FC<JobResultDisplayProps> = ({ alignSummaryData, i
           <label htmlFor="input-selector" className="block text-sm font-medium text-gray-600 mb-1">Viewing Results For Input Sequence:</label>
           <div className="relative">
             <select id="input-selector" value={selectedInput} onChange={(e) => setSelectedInput(e.target.value)} className="w-full pl-3 pr-10 py-2 text-lg font-semibold text-gray-800 bg-gray-50 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none">
-              {inputSequenceNames.map(name => <option key={name} value={name}>{name}</option>)}
+              {Object.keys(alignmentResults).map(name => <option key={name} value={name}>{name}</option>)}
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
           </div>
@@ -249,20 +258,17 @@ const JobResultDisplay: React.FC<JobResultDisplayProps> = ({ alignSummaryData, i
         ) : (
           <>
             <AlignmentMetricsCard result={currentAlignmentResult} />
-            {isLoadingFrames ? (
-              <div className="flex justify-center items-center h-48 bg-white rounded-lg shadow-md"><Loader2 className="animate-spin text-indigo-600" size={32}/></div>
-            ) : currentFrameData ? (
-              <FrameResultDisplay data={currentFrameData} />
-            ) : null}
-            <TopHitsExplorer 
-              jobId={job_id} 
-              availableTargets={alignSummaryData.available_targets}
-              isAuthenticated={isAuthenticated} 
-            />
+            {currentFrameData && <FrameResultDisplay data={currentFrameData} />}
+            {allTopHitsData && (
+              <TopHitsExplorer 
+                availableTargets={jobData.available_targets}
+                allTopHits={allTopHitsData}
+              />
+            )}
           </>
         )}
   
-        <ExportCard isAuthenticated={isAuthenticated} links={alignSummaryData.download_links} />
+        <ExportCard isAuthenticated={isAuthenticated} links={jobData.download_links} />
       </>
     );
 }
@@ -271,7 +277,7 @@ const JobResultDisplay: React.FC<JobResultDisplayProps> = ({ alignSummaryData, i
 // --- MAIN COMPONENT (Now handles polling and state) ---
 export const MultiAlignResultDisplay: React.FC<MultiAlignResultDisplayProps> = ({ jobID: jobId, isAuthenticated }) => {
     const [jobStatus, setJobStatus] = useState<'PENDING' | 'COMPLETED' | 'FAILED'>('PENDING');
-    const [alignSummaryData, setAlignSummaryData] = useState<AlignSummaryData | null>(null);
+    const [completedJobData, setCompletedJobData] = useState<CompletedJobData | null>(null);
 
     // --- REFS FOR MANAGING THE POLLING LOGIC ---
     // useRef is used because these values don't need to trigger a re-render when they change.
@@ -284,7 +290,7 @@ export const MultiAlignResultDisplay: React.FC<MultiAlignResultDisplayProps> = (
         // --- NEW POLLING FUNCTION WITH BACKOFF LOGIC ---
         const poll = async () => {
             try {
-                const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/jobs/status/${jobId}`);
+                const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/status/${jobId}`);
                 if (!response.ok) {
                     throw new Error(`Server responded with status: ${response.status}`);
                 }
@@ -294,7 +300,10 @@ export const MultiAlignResultDisplay: React.FC<MultiAlignResultDisplayProps> = (
                     // --- JOB IS DONE: Stop polling and update state ---
                     setJobStatus(data.status);
                     if (data.status === 'COMPLETED') {
-                        setAlignSummaryData(data as AlignSummaryData);
+                        if (typeof data.available_targets === 'string') {
+                            data.available_targets = JSON.parse(data.available_targets);
+                        }
+                        setCompletedJobData(data as CompletedJobData);
                     }
                     // Do NOT schedule another poll
                     return; 
@@ -351,9 +360,9 @@ export const MultiAlignResultDisplay: React.FC<MultiAlignResultDisplayProps> = (
                 </div>
             )}
 
-            {jobStatus === 'COMPLETED' && alignSummaryData && (
+            {jobStatus === 'COMPLETED' && completedJobData && (
                 <JobResultDisplay 
-                    alignSummaryData={alignSummaryData}
+                    jobData={completedJobData}
                     isAuthenticated={isAuthenticated}
                 />
             )}
