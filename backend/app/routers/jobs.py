@@ -1,4 +1,6 @@
-from fastapi import APIRouter, UploadFile, Depends, File, Form
+from fastapi import APIRouter, UploadFile, Depends, File, Form, Query
+from fastapi.responses import JSONResponse
+from fastapi.concurrency import run_in_threadpool
 from app.routers.auth import get_optional_user
 from app.models.auth_tools import User
 from app.scripts.aws_tools import *
@@ -29,3 +31,13 @@ def poll_alignment_status(job_id: str):
         return {'status': 'UNKNOWN'}
     
     return {'job_id': job_id, **job_data}
+
+@router.get("/retrieveResult")
+async def extract_result_file_from_s3_key(key: str = Query(...)):
+    try:
+        file_stream = download_from_s3(key)
+        json_content = await run_in_threadpool(json.load(file_stream), key)
+        return JSONResponse(content=json_content)
+    except:
+        print(f"Failed to process S3 key: {key}")
+        return JSONResponse(content={"error": "File not found or invalid!"}, status_code=404)
