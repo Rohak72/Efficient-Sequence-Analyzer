@@ -2,8 +2,6 @@ from app.scripts.aws_tools import *
 from app.scripts.utils import *
 from app.scripts.build_alignment import *
 from app.scripts.frame_retrieve import *
-from app.database import get_db
-from fastapi import Depends
 import json
 import traceback
 
@@ -27,7 +25,7 @@ async def handler(event: dict, context):
 
     return {'status': 200}
 
-async def process_alignment_job(message: dict, db = Depends(get_db)):
+async def process_alignment_job(message: dict):
     job_id = message.get("job_id")
     input_key = message.get("input_key")
     target_key = message.get("target_key")
@@ -66,7 +64,7 @@ async def process_alignment_job(message: dict, db = Depends(get_db)):
         if user_id:
             results_key, top_hits_key = save_alignment_artifacts(results_df=summary_df, top_hits=top_hits,
                                                                 current_user=user_id, s3_client=s3_client,
-                                                                bucket_name=fasta_bucket_name, db=db)
+                                                                bucket_name=fasta_bucket_name, db=None)
 
             presigned_result_url = generate_presigned_url(results_key, filename="orf_mappings.csv")
             presigned_hits_url = generate_presigned_url(top_hits_key, filename="top_hits.csv")
@@ -83,7 +81,7 @@ async def process_alignment_job(message: dict, db = Depends(get_db)):
         traceback.print_exc()
         jobs_table.put_item(Item={"job_id": job_id, "status": "FAILED"})
 
-async def run_pipeline(input_fasta: StringIO, target_fasta: StringIO, direction: str, current_user: str, 
+async def run_pipeline(input_fasta: StringIO, target_fasta: StringIO, direction: str, 
                        align_threshold: float = 0.98) -> tuple:
     input_sequences = await process_fasta_upload(input_fasta)
     target_sequences = await process_fasta_upload(target_fasta)
