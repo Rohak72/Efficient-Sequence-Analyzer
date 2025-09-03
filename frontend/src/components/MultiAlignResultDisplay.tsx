@@ -119,20 +119,28 @@ interface TopHitsExplorerProps {
     allTopHits: Record<string, any[]>; // e.g., { "TargetA": [[...]], "TargetB": [[...]] }
 }
 const TopHitsExplorer: React.FC<TopHitsExplorerProps> = ({ availableTargets, allTopHits }) => {
-    const [selectedTarget, setSelectedTarget] = useState<string>('');
+    const [selectedTarget, setSelectedTarget] = useState(
+      () => (availableTargets && availableTargets.length > 0) ? availableTargets[0] : ''
+    );
 
+    // This is a safety hook. If the list of targets changes for some reason
+    // (e.g., in a future feature) and the currently selected one is no longer valid,
+    // it resets to the first available one.
     useEffect(() => {
-        if (availableTargets.length > 0 && !selectedTarget) {
-            setSelectedTarget(availableTargets[0]);
-        }
+      if (availableTargets && availableTargets.length > 0 && !availableTargets.includes(selectedTarget)) {
+          setSelectedTarget(availableTargets[0]);
+      }
     }, [availableTargets, selectedTarget]);
 
-    if (!availableTargets || availableTargets.length === 0) {
-        return null;
+    if (!allTopHits || !availableTargets || availableTargets.length === 0) {
+      return (
+        <div className="bg-white rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.08)] p-6">
+            <p className="text-center text-gray-500">Top hits data is not available for this job.</p>
+        </div>
+      );
     }
 
     const currentHits = allTopHits[selectedTarget] || [];
-
 
     return (
       <div className="bg-white rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.08)] p-6">
