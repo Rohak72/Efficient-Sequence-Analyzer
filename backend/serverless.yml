@@ -94,7 +94,7 @@ functions:
   
   worker:
     handler: worker_handler.handler
-    timeout: 29
+    timeout: 300
     events:
       - sqs:
           arn:
