@@ -202,9 +202,9 @@ const JobResultDisplay: React.FC<JobResultDisplayProps> = ({ jobData, isAuthenti
             try {
                 // Fetch all three files in parallel for performance
                 const [alignRes, framesRes, hitsRes] = await Promise.all([
-                    fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/result-file?key=${jobData.alignment_key}`).then(res => res.json()),
-                    fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/result-file?key=${jobData.frames_key}`).then(res => res.json()),
-                    fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/result-file?key=${jobData.top_hits_key}`).then(res => res.json())
+                    fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/retrieveResult?key=${jobData.alignment_key}`).then(res => res.json()),
+                    fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/retrieveResult?key=${jobData.frames_key}`).then(res => res.json()),
+                    fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/retrieveResult?key=${jobData.top_hits_key}`).then(res => res.json())
                 ]);
 
                 setAlignmentResults(alignRes);
