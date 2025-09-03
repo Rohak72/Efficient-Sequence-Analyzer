@@ -202,9 +202,12 @@ const JobResultDisplay: React.FC<JobResultDisplayProps> = ({ jobData, isAuthenti
             try {
                 // Fetch all three files in parallel for performance
                 const [alignRes, framesRes, hitsRes] = await Promise.all([
-                    fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/retrieveResult?key=${jobData.alignment_key}`).then(res => res.json()),
-                    fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/retrieveResult?key=${jobData.frames_key}`).then(res => res.json()),
-                    fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/retrieveResult?key=${jobData.top_hits_key}`).then(res => res.json())
+                    fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/retrieveResult?key=${jobData.alignment_key}`)
+                      .then(res => res.json()),
+                    fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/retrieveResult?key=${jobData.frames_key}`)
+                      .then(res => res.json()),
+                    fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/retrieveResult?key=${jobData.top_hits_key}`)
+                      .then(res => res.json())
                 ]);
 
                 setAlignmentResults(alignRes);
@@ -227,7 +230,13 @@ const JobResultDisplay: React.FC<JobResultDisplayProps> = ({ jobData, isAuthenti
     }, [jobData]); // This runs once when the jobData is first received
 
     if (isLoading) {
-        return <div className="flex justify-center items-center h-48 bg-white rounded-lg shadow-md"><Loader2 className="animate-spin text-indigo-600" size={32}/> <span className="ml-4 text-gray-600">Loading results...</span></div>;
+        return (
+          <div className="flex flex-col items-center justify-center bg-white rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.08)] p-12">
+            <Loader2 className="h-16 w-16 text-gray-400 animate-spin" />
+            <h2 className="mt-6 text-2xl font-bold text-gray-700">Loading Results</h2>
+            <p className="mt-2 text-gray-500">Fetching and preparing your alignment data from storage.</p>
+          </div>
+        )
     }
     
     if (error) {
