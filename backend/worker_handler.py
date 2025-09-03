@@ -1,9 +1,11 @@
-from app.scripts.aws_tools import *
 from app.scripts.utils import *
+from app.scripts.aws_tools import *
 from app.scripts.build_alignment import *
 from app.scripts.frame_retrieve import *
+
 import json
 import traceback
+import asyncio
 
 """
 SQS → Lambda handler → process_alignment_job
@@ -13,11 +15,15 @@ SQS → Lambda handler → process_alignment_job
     → (Optional) Save permanent artifacts + presigned URLs if logged in.
 """
 
-async def handler(event: dict, context):
+def handler(event: dict, context):
     print("Received JSON event!")
     for record in event.get("Records"):
-        message = json.loads(record.get("body"))
-        await process_alignment_job(message)
+        try:
+            message = json.loads(record.get("body"))
+            asyncio.run(process_alignment_job(message))
+        except Exception:
+            print("CRITICAL ERROR processing a record. See traceback below.")
+            traceback.print_exc()
     
     # Debugging stdout:
     # print(f"Lambda {context.function_name} invoked with request ID: {context.aws_request_id}.")
@@ -39,9 +45,11 @@ async def process_alignment_job(message: dict):
         print("S3 FASTAs downloaded!")
         
         print("Starting alignment pipeline...")
-        frames, top_hits, alignment_results, summary_df = await run_pipeline(input_fasta, target_fasta, 
-                                                                             direction, user_id)
+        frames, top_hits, alignment_results, summary_df = await run_pipeline(input_fasta, target_fasta, direction)
         available_targets = list(top_hits.keys())
+        for hits in top_hits.values():
+            hits.sort(key=lambda x: x[0], reverse=True)
+        
         print("Finished alignment pipeline.")
         
         alignment_key = f"tmp/{job_id}/alignment_res.json"
@@ -108,6 +116,7 @@ def extract_alignment_results(query_frames: Dict, targets: Dict[str, str], direc
     alignment_results = {}
     
     for seq_name, frame_data in query_frames.items():
+        print(f"Processing {seq_name}...")
         all_orfs = [orf for frame in frame_data.values() for orf in frame.get('orf_set', [])]
 
         if not all_orfs:
