@@ -208,18 +208,21 @@ const JobResultDisplay: React.FC<JobResultDisplayProps> = ({ jobData, isAuthenti
             setIsLoading(true);
             setError(null);
             try {
-                // Fetch all three files in parallel for performance
-                const [alignRes, framesRes, hitsRes] = await Promise.all([
-                    fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/retrieveResult?key=${jobData.alignment_key}`)
-                      .then(res => res.json()),
-                    fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/retrieveResult?key=${jobData.frames_key}`)
-                      .then(res => res.json()),
-                    fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/retrieveResult?key=${jobData.top_hits_key}`)
-                      .then(res => res.json())
+                const [alignUrlRes, framesUrlRes, hitsUrlRes] = await Promise.all([
+                  fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/getResultDownloadURL?key=${jobData.alignment_key}`)
+                    .then(res => res.json()),
+                  fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/getResultDownloadURL?key=${jobData.frames_key}`)
+                    .then(res => res.json()),
+                  fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/getResultDownloadURL?key=${jobData.top_hits_key}`)
+                    .then(res => res.json())
                 ]);
 
-                console.log(hitsRes)
-
+                const [alignRes, framesRes, hitsRes] = await Promise.all([
+                  fetch(alignUrlRes.url).then(res => res.json()),
+                  fetch(framesUrlRes.url).then(res => res.json()),
+                  fetch(hitsUrlRes.url).then(res => res.json())
+                ]);
+                
                 setAlignmentResults(alignRes);
                 setAllFramesData(framesRes);
                 setAllTopHitsData(hitsRes);
