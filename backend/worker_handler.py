@@ -61,12 +61,18 @@ async def process_alignment_job(message: dict):
         await upload_to_s3(json.dumps(top_hits), top_hits_key)
         await upload_to_s3(json.dumps(frames), frames_key)
 
+        frames_url = generate_presigned_url(frames_key)
+        alignment_url = generate_presigned_url(alignment_key)
+        top_hits_url = generate_presigned_url(top_hits_key)
+
         job_payload = {
             "status": "COMPLETED",
-            "alignment_key": alignment_key,
-            "top_hits_key": top_hits_key,
-            "frames_key": frames_key,
-            "available_targets": json.dumps(available_targets)
+            "available_targets": json.dumps(available_targets),
+            "result_urls": json.dumps({
+                "frames": frames_url,
+                "alignment": alignment_url,
+                "top_hits": top_hits_url
+            })
         }
         
         if user_id:
