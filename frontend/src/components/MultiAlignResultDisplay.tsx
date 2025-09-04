@@ -17,12 +17,14 @@ interface AlignmentResult {
 interface CompletedJobData {
   job_id: string;
   status: 'COMPLETED';
+  alignment_key: string;
+  top_hits_key: string;
+  frames_key: string;
   available_targets: string[];
-  result_urls: string;
   download_links?: {
     orf_mappings: string;
     top_hits: string;
-  }
+  };
 }
 
 // The props for the new top-level component
@@ -206,12 +208,19 @@ const JobResultDisplay: React.FC<JobResultDisplayProps> = ({ jobData, isAuthenti
             setIsLoading(true);
             setError(null);
             try {
-                const resultURLs = JSON.parse(jobData.result_urls);
+                const [alignUrlRes, framesUrlRes, hitsUrlRes] = await Promise.all([
+                  fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/getResultDownloadURL?key=${jobData.alignment_key}`)
+                    .then(res => res.json()),
+                  fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/getResultDownloadURL?key=${jobData.frames_key}`)
+                    .then(res => res.json()),
+                  fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs/getResultDownloadURL?key=${jobData.top_hits_key}`)
+                    .then(res => res.json())
+                ]);
 
                 const [alignRes, framesRes, hitsRes] = await Promise.all([
-                  fetch(resultURLs.alignment).then(res => res.json()),
-                  fetch(resultURLs.frames).then(res => res.json()),
-                  fetch(resultURLs.top_hits).then(res => res.json())
+                  fetch(alignUrlRes.url).then(res => res.json()),
+                  fetch(framesUrlRes.url).then(res => res.json()),
+                  fetch(hitsUrlRes.url).then(res => res.json())
                 ]);
                 
                 setAlignmentResults(alignRes);
