@@ -218,6 +218,8 @@ const JobResultDisplay: React.FC<JobResultDisplayProps> = ({ jobData, isAuthenti
                       .then(res => res.json())
                 ]);
 
+                console.log(hitsRes)
+
                 setAlignmentResults(alignRes);
                 setAllFramesData(framesRes);
                 setAllTopHitsData(hitsRes);
