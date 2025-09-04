@@ -31,12 +31,11 @@ def poll_alignment_status(job_id: str):
     
     return {'job_id': job_id, **job_data}
 
-@router.get("/retrieveResult")
-def extract_result_file_from_s3_key(key: str = Query(...)):
+@router.get("/getResultDownloadURL")
+def retrieve_result_presigned_url(key: str = Query(...)):
     try:
-        file_stream = download_from_s3(key)
-        json_content = json.load(file_stream)
-        return JSONResponse(content=json_content)
+        url = generate_presigned_url(key)
+        return {'url': url}
     except:
-        print(f"Failed to process S3 key: {key}")
-        return JSONResponse(content={"error": "File not found or invalid!"}, status_code=404)
+        print(f"Failed to process S3 key: {key}!")
+        return JSONResponse(content={"error": "Couldn't generate download link."}, status_code=500)
